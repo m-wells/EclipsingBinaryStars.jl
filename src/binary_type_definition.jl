@@ -5,8 +5,6 @@
     Distributed under terms of the MIT license.
 =#
 
-module binary_type_definition
-
 const grav_con_mks = 6.67408e-11                    # m³ kg⁻¹ s⁻²
 const sol_mass_mks = 1.98847e+30                    # kg
 const sol_radi_mks = 6.95700e+08                    # m
@@ -132,10 +130,4 @@ function Binary( ; pri = pri :: Star
     orb = Orbit(ω = ω, ε = ε, i = i, a = a)
 
     return Binary(pri, sec, orb, per)
-end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-
 end
