@@ -8,7 +8,7 @@ module EclipsingBinaryStars
 
 using Optim
 
-include("binary_type_definition.jl")
+#include("binary_type_definition.jl")
 
 """
 Get projected separation, ρ, at the specified true anomaly, ν
