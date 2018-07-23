@@ -4,7 +4,7 @@
     Distributed under terms of the MIT license.
 =#
 
-module EclipsingBinaryStars.jl
+module EclipsingBinaryStars
 
 include("binary_type_definition.jl")
 
