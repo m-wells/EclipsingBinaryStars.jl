@@ -25,11 +25,11 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Orbit( ; ω = ω   :: Float64   # argument of periastron
-                , ε = ε   :: Float64   # eccentricity
-                , i = i   :: Float64   # inclination
-                , a = a   :: Float64   # semi-major axis (in solar radii)
-              )           :: Orbit
+function getOrbit( ; ω = ω   :: Float64   # argument of periastron
+                   , ε = ε   :: Float64   # eccentricity
+                   , i = i   :: Float64   # inclination
+                   , a = a   :: Float64   # semi-major axis (in solar radii)
+                 )           :: Orbit
     return Orbit(ω, ε, i, a)
 end
 
@@ -44,9 +44,9 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Star( ; m = m :: Float64  # mass
-               , r = r :: Float64  # radius
-             )
+function getStar( ; m = m :: Float64  # mass
+                  , r = r :: Float64  # radius
+                )         :: Star
     return Star(m, r)
 end
 
@@ -102,23 +102,23 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Binary( ; pri = pri :: Star
-                 , sec = sec :: Star
-                 , orb = orb :: Orbit
-               )
+function getBinary( ; pri = pri :: Star
+                    , sec = sec :: Star
+                    , orb = orb :: Orbit
+                  )             :: Binary
     per = kepler3rdlaw_sep_to_per(pri=pri, sec=sec, orb=orb)
     return Binary(pri, sec, orb, per)
 end
 
 #---------------------------------------------------------------------------------------------------
 
-function Binary( ; pri = pri :: Star
-                 , sec = sec :: Star
-                 , per = per :: Float64     # period (in days)
-                 , ω   = ω   :: Float64     # argument of periastron
-                 , ε   = ε   :: Float64     # eccentricity
-                 , i   = i   :: Float64     # inclination
-               )
+function getBinary( ; pri = pri :: Star
+                    , sec = sec :: Star
+                    , per = per :: Float64     # period (in days)
+                    , ω   = ω   :: Float64     # argument of periastron
+                    , ε   = ε   :: Float64     # eccentricity
+                    , i   = i   :: Float64     # inclination
+                  )             :: Binary
     # get semi-major axis
     a = kepler3rdlaw_per_to_sep( pri = pri
                                , sec = sec

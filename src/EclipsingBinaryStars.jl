@@ -6,6 +6,8 @@
 
 module EclipsingBinaryStars
 
+using Optim
+
 include("binary_type_definition.jl")
 
 """
@@ -113,7 +115,7 @@ end
 #   using Bisection
 #  0.156656 seconds (42.43 k allocations: 2.274 MiB)
 
-using Optim
+#using Optim
 #   using Brents Method
 #  0.000019 seconds (4 allocations: 352 bytes)
 
