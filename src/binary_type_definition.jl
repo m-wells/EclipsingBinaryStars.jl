@@ -5,12 +5,12 @@
     Distributed under terms of the MIT license.
 =#
 
-const grav_con_mks = 6.67408e-11                    # m³ kg⁻¹ s⁻²
-const sol_mass_mks = 1.98847e+30                    # kg
-const sol_radi_mks = 6.95700e+08                    # m
-const secs_per_day = 8.64e4                         # s
+const grav_con_mks = 6.67408e-11                    # [m³⋅kg⁻¹⋅s⁻²]
+const sol_mass_mks = 1.98847e+30                    # [kg]
+const sol_radi_mks = 6.95700e+08                    # [m]
+const secs_per_day = 8.64e4                         # [s]
 
-const grav_msol_mks = grav_con_mks*sol_mass_mks     # m³ s⁻²
+const grav_msol_mks = grav_con_mks*sol_mass_mks     # [m³⋅s⁻²]
 
 #---------------------------------------------------------------------------------------------------
 ####################################################################################################
@@ -20,15 +20,15 @@ struct Orbit
     ω  :: Float64  # argument of periastron
     ε  :: Float64  # eccentricity
     i  :: Float64  # inclination
-    a  :: Float64  # semi-major axis (in solar radii)
+    a  :: Float64  # semi-major axis [R⊙]
 end
 
 #---------------------------------------------------------------------------------------------------
 
-function Orbit( ; ω = ω   :: Float64   # argument of periastron
-                , ε = ε   :: Float64   # eccentricity
-                , i = i   :: Float64   # inclination
-                , a = a   :: Float64   # semi-major axis (in solar radii)
+function Orbit( ; ω = error("ω is not specified") :: Float64   # argument of periastron
+                , ε = error("ε is not specified") :: Float64   # eccentricity
+                , i = error("i is not specified") :: Float64   # inclination
+                , a = error("a is not specified") :: Float64   # semi-major axis [R⊙]
               )           :: Orbit
     return Orbit(ω, ε, i, a)
 end
@@ -44,8 +44,8 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Star( ; m = m :: Float64  # mass
-               , r = r :: Float64  # radius
+function Star( ; m = error("m is not specified") :: Float64   # mass   [M⊙]
+               , r = error("r is not specified") :: Float64   # radius [R⊙]
              )         :: Star
     return Star(m, r)
 end
@@ -74,19 +74,19 @@ end
 semi-major axis is in solar radii
 period is in days
 """
-function k3_P_to_a( pri   :: Star
-                  , sec   :: Star
-                  ; P = P :: Float64   # period (in days)
-                  , ω = ω :: Float64   # argument of periastron
-                  , ε = ε :: Float64   # eccentricity
-                  , i = i :: Float64   # inclination
-                  )       :: Float64
+function k3_P_to_a( pri                             :: Star
+                  , sec                             :: Star
+                  ; P = error("P is not specified") :: Float64   # period [days]
+                  , ω = error("ω is not specified") :: Float64   # argument of periastron
+                  , ε = error("ε is not specified") :: Float64   # eccentricity
+                  , i = error("i is not specified") :: Float64   # inclination
+                  )                                 :: Float64
 
     P²   = (P*secs_per_day)^2
     GM₁₂ = (pri.m + sec.m)*grav_msol_mks
-    a³ = P²*GM₁₂/(4π^2)     # a is the semi-major axis
-    a  = ∛(a³)
-    return a/sol_radi_mks
+    a³   = P²*GM₁₂/(4π^2)
+    a    = ∛(a³)            # a [m]
+    return a/sol_radi_mks   # a [R⊙]
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -113,13 +113,13 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Binary( pri                            :: Star
-               , sec                            :: Star
-               ; P   = error("missing keyword") :: Float64     # period (in days)
-               , ω   = error("missing keyword") :: Float64     # argument of periastron
-               , ε   = error("missing keyword") :: Float64     # eccentricity
-               , i   = error("missing keyword") :: Float64     # inclination
-               )                                :: Binary
+function Binary( pri                          :: Star
+               , sec                          :: Star
+               ; P = error("missing keyword") :: Float64     # period [days]
+               , ω = error("missing keyword") :: Float64     # argument of periastron
+               , ε = error("missing keyword") :: Float64     # eccentricity
+               , i = error("missing keyword") :: Float64     # inclination
+               )                              :: Binary
     # get semi-major axis
     a   = k3_P_to_a(pri, sec, P = P, ω = ω, ε = ε, i = i)
     orb = Orbit(ω, ε, i, a)

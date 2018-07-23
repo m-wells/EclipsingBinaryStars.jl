@@ -6,9 +6,11 @@
 
 module EclipsingBinaryStars
 
+include("binary_type_definition.jl")
+export Star, Orbit, Binary
+
 using Optim
 
-include("binary_type_definition.jl")
 
 """
 Get projected separation, ρ, at the specified true anomaly, ν
