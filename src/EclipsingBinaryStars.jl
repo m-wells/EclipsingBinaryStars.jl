@@ -277,7 +277,7 @@ function get_time_btw_νs( s  :: Binary
     ea2 = get_E_from_ν(s.orb, ν2)
     ma1 = get_M_from_E(s.orb, ea1)
     ma2 = get_M_from_E(s.orb, ea2)
-    n = 2pi/s.per
+    n = 2pi/s.P
     return (ma2 - ma1)/n
 end
 
