@@ -4,9 +4,9 @@
     Distributed under terms of the MIT license.
 =#
 
-module keplerian_eclipsing_model
+module EclipsingBinaryStars.jl
 
-using binary_type_definition: Orbit, Binary
+include("binary_type_definition.jl")
 
 """
 Get projected separation, ρ, at the specified true anomaly, ν
