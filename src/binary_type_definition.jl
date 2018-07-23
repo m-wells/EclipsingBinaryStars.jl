@@ -107,8 +107,8 @@ function getBinary( ; pri = pri :: Star
                     , orb = orb :: Orbit
                   )             :: Binary
 
-    per = kepler3rdlaw_sep_to_per(pri=pri, sec=sec, orb=orb)
-    return Binary(pri, sec, orb, per)
+    period = kepler3rdlaw_sep_to_per(pri=pri, sec=sec, orb=orb)
+    return Binary(pri, sec, orb, period)
 end
 
 #---------------------------------------------------------------------------------------------------
