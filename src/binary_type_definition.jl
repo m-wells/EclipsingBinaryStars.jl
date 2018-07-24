@@ -102,10 +102,10 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Binary( pri :: Star
-               , sec :: Star
-               , orb :: Orbit
-               )     :: Binary
+function getBinary( pri :: Star
+                  , sec :: Star
+                  , orb :: Orbit
+                  )     :: Binary
 
     P = k3_a_to_P(pri, sec, orb)
     return Binary(pri, sec, orb, P)
@@ -113,13 +113,13 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function Binary( pri                          :: Star
-               , sec                          :: Star
-               ; P = error("missing keyword") :: Float64     # period [days]
-               , ω = error("missing keyword") :: Float64     # argument of periastron
-               , ε = error("missing keyword") :: Float64     # eccentricity
-               , i = error("missing keyword") :: Float64     # inclination
-               )                              :: Binary
+function getBinary( pri                          :: Star
+                  , sec                          :: Star
+                  ; P = error("missing keyword") :: Float64     # period [days]
+                  , ω = error("missing keyword") :: Float64     # argument of periastron
+                  , ε = error("missing keyword") :: Float64     # eccentricity
+                  , i = error("missing keyword") :: Float64     # inclination
+                  )                              :: Binary
     # get semi-major axis
     a   = k3_P_to_a(pri, sec, P = P, ω = ω, ε = ε, i = i)
     orb = Orbit(ω, ε, i, a)

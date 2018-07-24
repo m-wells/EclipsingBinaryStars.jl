@@ -7,7 +7,7 @@
 module EclipsingBinaryStars
 
 include("binary_type_definition.jl")
-export Star, Orbit, Binary
+export Star, Orbit, Binary, determine_eclipsing_morphology
 
 using Optim
 
@@ -52,9 +52,9 @@ Get eclipse morphology
     1 - partial eclipse
     0 - no eclipse
 """
-function eclipse_morphology( s :: Binary
-                           , ν :: Float64
-                           )   :: Int
+function eclipse_morphology_at_ν( s :: Binary
+                                , ν :: Float64
+                                )   :: Int
     ρ = abs(get_sky_pos(s.orb,ν)[2])
     if ρ < abs(s.pri.r - s.sec.r)
         m = 2   # annular / or total
@@ -66,13 +66,18 @@ function eclipse_morphology( s :: Binary
     return m
 end
 
+function eclipse_morphology_at_nu(s :: Binary, ν :: Float64)   :: Int
+    return eclipse_morphology_at_ν(s :: Binary, nu :: Float64)   :: Int
+end
+
 #---------------------------------------------------------------------------------------------------
 
-function get_eclip_morphs(s :: Binary) :: Tuple{ Tuple{Float64,Float64}
-                                               , Tuple{Int,Int}
-                                               }
-    ν = (π/2-s.orb.ω, 3π/2-s.orb.ω)     # potential critical eclipse points
-    return ν,(eclipse_morphology(s,ν[1]), eclipse_morphology(s,ν[2]))
+function determine_eclipsing_morphology(s :: Binary) :: Tuple{ Tuple{Float64,Float64}
+                                                             , Tuple{Int,Int}
+                                                             }
+    ν = (π/2-s.orb.ω, 3π/2-s.orb.ω)     # critical potential eclipse points
+    morphs = eclipse_morphology.(s,ν) 
+    return ν,morphs
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -93,6 +98,20 @@ end
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
 
+"""
+function get_critical_bounds
+
+Input
+    orb -> Orbit
+    ν_e -> true anomaly at mid eclipse
+
+Output
+    θ1 -> lower bound of true anomaly
+    θ2 -> mid eclipse, upper bound of one side, lower bound of the other side
+    θ3 -> upper bound
+
+Get the left and right bounds for the numerical solver.
+"""
 function get_critical_bounds( orb :: Orbit
                             , ν_e :: Float64
                             )     :: Tuple{Float64,Float64,Float64}
@@ -122,23 +141,31 @@ end
 #  0.000019 seconds (4 allocations: 352 bytes)
 
 """
-ν of contact points
-for eclipse at ν_e = π/2 - ω 
+function get_critical_νs
+
+
+Input:
+    s   -> Binary system
+    ν_e -> true anomaly of mid eclipse
+    ρ_c -> projected separation at critical contact points
+Output:
+
+Get the true anomaly for critical points of the eclipse. For an eclipse that occurs at ν_e = π/2 - ω 
     (partial and total/annular)
-    1st contact point x² + y² = r1² + r2²       where x > 0, y > 0
+    1st contact point x² + y² = r₁² + r₂²       where x > 0, y > 0
     (total/annular)
-    1st contact point x² + y² = abs(r1² - r2²)  where x > 0, y > 0
+    1st contact point x² + y² = abs(r₁² - r₂²)  where x > 0, y > 0
     (total/annular)
-    3nd contact point x² + y² = abs(r1² - r2²)  where x < 0, y > 0
+    3nd contact point x² + y² = abs(r₁² - r₂²)  where x < 0, y > 0
     (partial and total/annular)
-    4th contact point x² + y² = r1² + r2²       where x < 0, y > 0
+    4th contact point x² + y² = r₁² + r₂²       where x < 0, y > 0
 for eclipse at ν + ω = 3π/2
     similar to the above except y < 0
 """
 function get_critical_νs( s   :: Binary
                         , ν_e :: Float64
                         , ρ_c :: Float64
-                        )
+                        )     :: Tuple{Float64,Float64}
     tol = 0.001
 
     # define optimization function
@@ -162,18 +189,88 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function get_inner_critical_νs( s   :: Binary
+"""
+function get_outer_critical_νs
+
+Input
+    s   -> Binary
+    ν_e -> true anomaly at mid eclipse
+
+Output
+    ν₁ -> true anomaly at first contact
+    ν₄ -> true anomaly at last contact
+
+"""
+function get_outer_critical_νs( s   :: Binary
                               , ν_e :: Float64
-                              )
-    return get_critical_νs(s, ν_e, s.pri.r - s.sec.r)
+                              )     :: Tuple{Float64,Float64}
+    return get_critical_νs(s, ν_e, abs(s.pri.r + s.sec.r))
 end
 
 #---------------------------------------------------------------------------------------------------
 
-function get_outer_critical_νs( s   :: Binary
+"""
+function get_inner_critical_νs
+
+Input
+    s   -> Binary
+    ν_e -> true anomaly at mid eclipse
+
+Output
+    ν₂ -> true anomaly at second contact
+    ν₃ -> true anomaly at third contact
+
+Note: these are only defined for total/annular eclipsers.
+"""
+
+function get_inner_critical_νs( s   :: Binary
                               , ν_e :: Float64
-                              )
-    return get_critical_νs(s, ν_e, abs(s.pri.r + s.sec.r))
+                              )     :: Tuple{Float64,Float64}
+    return get_critical_νs(s, ν_e, abs(s.pri.r - s.sec.r))
+end
+
+#---------------------------------------------------------------------------------------------------
+####################################################################################################
+#---------------------------------------------------------------------------------------------------
+
+"""
+function get_transit_duration_partial
+
+Input
+    s   -> Binary
+    ν_e -> true anomaly of mid eclipse
+"""
+
+function get_transit_duration_partial( s   :: Binary
+                                     , ν_e :: Float64
+                                     )     :: Float64
+
+    ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
+    # if ν₄ is less than ν₁ then the orbit has wrapped around 2π
+    if ν₄ < ν₁
+        ν₄ += 2π
+    end
+        
+    return get_time_btw_νs(s, ν₁, ν₄)
+end
+#---------------------------------------------------------------------------------------------------
+
+"""
+function get_transit_duration_totann
+    s   -> Binary
+    ν_e -> true anomaly of mid eclipse
+"""
+
+function get_transit_duration_totann( s   :: Binary
+                                    , ν_e :: Float64
+                                    )     :: Float64
+
+    ν₂,ν₃ = get_outer_critical_νs(s, ν_e)
+    if ν₃ < ν₂
+        ν₃ += 2π
+    end
+        
+    return get_time_btw_νs(s, ν₂, ν₃)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -269,6 +366,16 @@ end
 #---------------------------------------------------------------------------------------------------
 
 """
+function get_time_btw_νs
+
+Input
+    s  -> Binary
+    ν₁ -> true anomaly at a point
+    ν₂ -> true anomaly at a different point some time later
+
+Output
+    time -> the time to go from ν₁ to ν₂ (given in same units as period)
+
 https://en.wikipedia.org/wiki/True_anomaly
 """
 function get_time_btw_νs( s  :: Binary
@@ -347,7 +454,7 @@ end
 #---------------------------------------------------------------------------------------------------
 
 """
-Return a tuple indicating the fractions of each star that is visible
+Return a tuple indicating the visible fraction of each star at ν
 
 Example:
 (1,0.75) means that the primary is fully visible while a quarter of the secondary is covered
