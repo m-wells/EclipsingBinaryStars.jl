@@ -1,7 +1,8 @@
 language: julia
 
+if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+
 julia -e 'Pkg.clone(pwd())'
-julia -e 'Pkg.build("$name")'
 if [ -f test/runtests.jl ]; then
-  julia --check-bounds=yes -e 'Pkg.test("$name", coverage=true)'
+  julia --check-bounds=yes -e 'Pkg.test("EclipsingBinaryStars", coverage=true)'
 fi
