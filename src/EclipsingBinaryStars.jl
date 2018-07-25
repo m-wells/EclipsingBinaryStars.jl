@@ -268,8 +268,15 @@ function get_transit_duration_totann( s   :: Binary
     if ν₃ < ν₂
         ν₃ += 2π
     end
+
+    ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
+    if ν₄ < ν₁
+        ν₄ += 2π
+    end
         
-    return get_time_btw_νs(s, ν₂, ν₃)
+    time_inner = get_time_btw_νs(s, ν₂, ν₃)
+    time_outer = get_time_btw_νs(s, ν₁, ν₄)
+    return 0.5*(time_inner + time_outer)
 end
 
 #---------------------------------------------------------------------------------------------------
