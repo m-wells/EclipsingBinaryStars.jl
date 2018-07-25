@@ -7,7 +7,7 @@
 module EclipsingBinaryStars
 
 include("binary_type_definition.jl")
-export Star, Orbit, Binary, determine_eclipsing_morphology
+export Star, getStar, Orbit, getOrbit, Binary, getBinary, determine_eclipsing_morphologies
 
 using Optim
 
@@ -72,11 +72,11 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function determine_eclipsing_morphology(s :: Binary) :: Tuple{ Tuple{Float64,Float64}
-                                                             , Tuple{Int,Int}
-                                                             }
+function determine_eclipsing_morphologies( s :: Binary) :: Tuple{ Tuple{Float64,Float64}
+                                                                , Tuple{Int,Int}
+                                                                }
     ν = (π/2-s.orb.ω, 3π/2-s.orb.ω)     # critical potential eclipse points
-    morphs = eclipse_morphology.(s,ν) 
+    morphs = eclipse_morphology_at_ν.(s,ν) 
     return ν,morphs
 end
 
@@ -184,6 +184,9 @@ function get_critical_νs( s   :: Binary
     @assert(val < tol, "Solution appears to be incorrect!")
     ν2 = Optim.minimizer(res)
 
+    if ν1 > ν2
+        ν2 += 2π
+    end
     return (ν1,ν2)
 end
 
@@ -246,10 +249,6 @@ function get_transit_duration_partial( s   :: Binary
                                      )     :: Float64
 
     ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
-    # if ν₄ is less than ν₁ then the orbit has wrapped around 2π
-    if ν₄ < ν₁
-        ν₄ += 2π
-    end
         
     return get_time_btw_νs(s, ν₁, ν₄)
 end
@@ -283,9 +282,17 @@ https://en.wikipedia.org/wiki/Eccentric_anomaly
 function get_E_from_ν( o :: Orbit
                      , ν :: Float64
                      )   :: Float64
-    return atan2( √(1 - o.ε^2)*sin(ν)
-                , o.ε + cos(ν)
-                )
+    ea = atan2( √(1 - o.ε^2)*sin(ν)
+              , o.ε + cos(ν)
+              )
+    # test if ea should be cycled forward
+    if (ν > 0) && (ea < 0)
+        ea += 2π
+    end
+    if (ν > 3π/2) && (ea < π/2)
+        ea += 2π
+    end
+    return ea
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -386,6 +393,10 @@ function get_time_btw_νs( s  :: Binary
     ea2 = get_E_from_ν(s.orb, ν2)
     ma1 = get_M_from_E(s.orb, ea1)
     ma2 = get_M_from_E(s.orb, ea2)
+    #@show ea1
+    #@show ea2
+    #@show ma1
+    #@show ma2
     n = 2pi/s.P
     return (ma2 - ma1)/n
 end
