@@ -7,7 +7,7 @@
 module EclipsingBinaryStars
 
 include("binary_type_definition.jl")
-export Star, getStar, Orbit, getOrbit, Binary, getBinary, determine_eclipsing_morphologies
+export Star, getStar, Orbit, getOrbit, Binary, getBinary, determine_eclipsing_morphologies, get_visible_frac
 
 using Optim
 
