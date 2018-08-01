@@ -57,8 +57,8 @@ function Base.show( io :: IO
                   , v  :: Star
                   )
     print( io
-         , "   m = ", v.m, " M⊙"
-         , " | r = ", v.r, " R⊙"
+         , "   m: ", v.m, " M⊙"
+         , " | r: ", v.r, " R⊙"
          )
 end
 
