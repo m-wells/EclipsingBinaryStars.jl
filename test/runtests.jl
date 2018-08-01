@@ -93,6 +93,7 @@ for ν in 0:π/3:2π
         for i in 0:π/10:π/2
             for ε in 0:0.1:1-eps()
                 for a in a_range
+                    @show (ν,ω,i,ε,a)
                     fake_orb = getOrbit(ω=ω, ε=ε, i=i, a=a)
                     fake_binary = getBinary(fake_pri, fake_sec, fake_orb)
                     
