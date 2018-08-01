@@ -34,12 +34,7 @@ function Base.show( io :: IO
          )
 end
 
-function Base.show{T}( io :: IO
-                     ,    :: MIME"text/plain"
-                     , v  :: Orbit{T}
-                     )
-    print(io, "Orbit{$T}:\n   ", v)
-end
+Base.show{T}(io::IO, ::MIME"text/plain", v::Orbit{T}) = print(io, "Orbit{$T}:\n   ", v)
 
 #---------------------------------------------------------------------------------------------------
 
