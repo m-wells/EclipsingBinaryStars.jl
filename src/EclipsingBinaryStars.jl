@@ -217,24 +217,26 @@ function get_critical_νs( s   :: Binary
 
     res = optimize(f, θ1, θ2, Brent())
     val = abs(Optim.minimum(res))
-    @assert( val < tol
+    @assert( converged(res) || (val < tol)
            , string( "Solution appears to be incorrect!\n"
-                   , "\tval = ", val, "\n"
-                   , "\ttol = ", tol, "\n"
-                   , "\tθ1 = " , θ1 , "\n"
-                   , "\tθ2 = " , θ2 , "\n"
+                   , "\tval = "       , val            , "\n"
+                   , "\ttol = "       , tol            , "\n"
+                   , "\tθ1 = "        , θ1             , "\n"
+                   , "\tθ2 = "        , θ2             , "\n"
+                   , "\tconverged = " , converged(res) , "\n"
                    )
            )
     ν1 = Optim.minimizer(res)
 
     res = optimize(f, θ2, θ3, Brent())
     val = abs(Optim.minimum(res))
-    @assert( val < tol
-           , string( "Solution appears to be incorrect!\n"
-                   , "\tval = ", val, "\n"
-                   , "\ttol = ", tol, "\n"
-                   , "\tθ2 = " , θ2 , "\n"
-                   , "\tθ3 = " , θ3 , "\n"
+    @assert( converged(res) || (val < tol)
+                   , string( "Solution appears to be incorrect!\n"
+                   , "\tval = "       , val            , "\n"
+                   , "\ttol = "       , tol            , "\n"
+                   , "\tθ2 = "        , θ2             , "\n"
+                   , "\tθ3 = "        , θ3             , "\n"
+                   , "\tconverged = " , converged(res) , "\n"
                    )
            )
 
