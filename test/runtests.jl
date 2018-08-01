@@ -97,14 +97,17 @@ for ν in 0:π/3:2π
                     fake_orb = getOrbit(ω=ω, ε=ε, i=i, a=a)
                     fake_binary = getBinary(fake_pri, fake_sec, fake_orb)
                     
-                    fracs = get_visible_frac(fake_binary, ν)
-                    @show fracs
-                    # they can't both be eclipsed at the same time
-                    @test any(fracs .== 1)
-                    # fractions cannot be less than 0
-                    @test .!any(fracs .< 0)
-                    # fractions cannot be greater than 1
-                    @test .!any(fracs .> 1)
+                    valid_binary = periastron_check(fake_binary)
+                    if valid_binary
+                        fracs = get_visible_frac(fake_binary, ν)
+                        @show fracs
+                        # they can't both be eclipsed at the same time
+                        @test any(fracs .== 1)
+                        # fractions cannot be less than 0
+                        @test .!any(fracs .< 0)
+                        # fractions cannot be greater than 1
+                        @test .!any(fracs .> 1)
+                    end
                 end
             end
         end

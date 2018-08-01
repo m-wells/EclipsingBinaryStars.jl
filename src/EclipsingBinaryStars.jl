@@ -8,7 +8,7 @@ module EclipsingBinaryStars
 
 include("binary_type_definition.jl")
 export Star, getStar, Orbit, getOrbit, Binary, getBinary, determine_eclipsing_morphologies,
-    get_visible_frac, get_transit_duration_partial, get_transit_duration_totann
+    get_visible_frac, get_transit_duration_partial, get_transit_duration_totann, periastron_check
 
 using Optim
 
@@ -43,6 +43,21 @@ function get_sky_pos( orb :: Orbit
     return x, y⋅cos(orb.i), y⋅sin(orb.i) 
 end
 
+function get_sky_pos( s :: Binary
+                    , ν :: Float64
+                    )   :: Tuple{Float64,Float64,Float64}
+    return get_sky_pos(s.orb, ν)
+end
+
+#---------------------------------------------------------------------------------------------------
+####################################################################################################
+#---------------------------------------------------------------------------------------------------
+
+function periastron_check( s :: Binary ) :: Bool
+    peridist = (1 - s.orb.ε)*s.orb.a
+    return peridist >= s.pri.r + s.sec.r
+end
+
 #---------------------------------------------------------------------------------------------------
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
@@ -57,13 +72,20 @@ function eclipse_morphology_at_ν( s :: Binary
                                 , ν :: Float64
                                 )   :: Int
     ρ = get_ρ(s,ν)
-    if ρ < abs(s.pri.r - s.sec.r)
-        m = 2   # annular / or total
-    elseif ρ >= s.pri.r + s.sec.r
+
+    if ρ >= s.pri.r + s.sec.r
         # the '=' means they kiss but no eclipse
         m = 0   # no eclipse
+    elseif ρ > abs(r₁ - r₂)
+        # partial
+        m = 1
+    elseif ρ >= 0
+        m = 2   # annular / or total
     else
-        m = 1   # partial
+        error(string( "ρ is not recognized: ρ = "
+                    , ρ
+                    )
+             )
     end
     return m
 end
