@@ -59,7 +59,8 @@ function eclipse_morphology_at_ν( s :: Binary
     ρ = get_ρ(s,ν)
     if ρ < abs(s.pri.r - s.sec.r)
         m = 2   # annular / or total
-    elseif ρ > s.pri.r + s.sec.r
+    elseif ρ >= s.pri.r + s.sec.r
+        # the '=' means they kiss but no eclipse
         m = 0   # no eclipse
     else
         m = 1   # partial
