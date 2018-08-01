@@ -23,6 +23,15 @@ struct Orbit
     a  :: Float64  # semi-major axis [R⊙]
 end
 
+function Base.show(io::IO, orb::Orbit)
+    print( io
+         , "ω = ", orb.ω
+         , "ε = ", orb.ε
+         , "i = ", orb.i
+         , "a = ", orb.a
+         )
+end
+
 #---------------------------------------------------------------------------------------------------
 
 function getOrbit( ; ω = error("ω is not specified") :: Float64   # argument of periastron
