@@ -97,6 +97,7 @@ for ν in 0:π/3:2π
                     fake_binary = getBinary(fake_pri, fake_sec, fake_orb)
                     
                     fracs = get_visible_frac(fake_binary, ν)
+                    @show fracs
                     # they can't both be eclipsed at the same time
                     @test any(fracs .== 1)
                     # fractions cannot be less than 0

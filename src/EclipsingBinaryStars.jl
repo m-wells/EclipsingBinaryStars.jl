@@ -458,7 +458,7 @@ function area_of_overlap( ρ  :: Float64
                         , r₁ :: Float64
                         , r₂ :: Float64
                         )    :: Float64
-    #@assert(abs(r₁ - r₂) < ρ < (r₁ + r₂), "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)")
+    @assert(abs(r₁ - r₂) < ρ < (r₁ + r₂), "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)")
     x = (ρ^2 + r₁^2 - r₂^2)/(2⋅ρ)
     #println("x = ",x)
     A_s₁ = (r₁^2)⋅acos(x/r₁) - x⋅√(r₁^2 - x^2)
@@ -482,20 +482,22 @@ function get_visible_frac( s :: Binary
                          , ν :: Float64
                          )   :: Tuple{Float64,Float64}
 
-    χ,ψ,ζ = get_sky_pos(s.orb,ν)
-    ρ = √(χ^2 + ψ^2)    # get separation
+    morph = eclipse_morphology_at_ν(s,ν)
 
-    @show ρ
-    @show s.pri.r
-    @show s.sec.r
-    if ρ >= s.pri.r + s.sec.r    # no eclipse
+    #-----------------------------------------------------------------------------------------------
+    # no eclipse
+    if morph == 0
         return (1,1)
     end
+    #-----------------------------------------------------------------------------------------------
 
     area1 = π*s.pri.r^2
     area2 = π*s.sec.r^2
 
-    if ρ < abs(s.pri.r - s.sec.r)   # total/annular eclipse
+    χ,ψ,ζ = get_sky_pos(s.orb,ν)
+    ρ = √(χ^2 + ψ^2)    # get separation
+
+    if morph == 2   # total/annular eclipse
         if ζ > 0    # secondary is in front
             if ρ + s.sec.r < s.pri.r    # sep + sec radius is less than pri radius
                                         # secondary is causing an annular eclipse on primary
@@ -514,7 +516,7 @@ function get_visible_frac( s :: Binary
                 return (1,0)
             end
         end
-    else    # partial eclipse
+    elseif morph == 1    # partial eclipse
         area_overlap = area_of_overlap(ρ, s.pri.r, s.sec.r)
         if ζ > 0    # secondary is in front
             frac = (area1 - area_overlap)/area1
@@ -523,6 +525,8 @@ function get_visible_frac( s :: Binary
             frac = (area2 - area_overlap)/area2
             return (1,frac)
         end
+    else
+        error("unrecognized morphology value")
     end
 end
 
