@@ -518,7 +518,7 @@ function get_visible_frac( s :: Binary
                          )   :: Tuple{Float64,Float64}
 
     morph = eclipse_morphology_at_ν(s,ν)
-    @show morph
+    #@show morph
 
     #-----------------------------------------------------------------------------------------------
     # no eclipse
