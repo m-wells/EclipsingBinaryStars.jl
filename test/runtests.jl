@@ -82,32 +82,32 @@ end
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
 
-@testset "visible_frac_exhaustive" begin
-    fake_pri = getStar(m=5, r=2)
-    fake_sec = getStar(m=1, r=1)
+#@testset "visible_frac_exhaustive" begin
+fake_pri = getStar(m=5, r=2)
+fake_sec = getStar(m=1, r=1)
 
-    a_range = [3.0, 30.0, 300.0, 3000.0, 30000.0]
+a_range = [3.0, 30.0, 300.0, 3000.0, 30000.0]
 
-    for ν in 0:π/3:2π
-        for ω in 0:π/3:2π
-            for i in 0:π/10:π/2
-                for ε in 0:0.1:1-eps()
-                    for a in a_range
-                        fake_orb = getOrbit(ω=ω, ε=ε, i=i, a=a)
-                        fake_binary = getBinary(fake_pri, fake_sec, fake_orb)
-                        
-                        fracs = get_visible_frac(fake_binary, ν)
-                        # they can't both be eclipsed at the same time
-                        @test any(fracs .== 1)
-                        # fractions cannot be less than 0
-                        @test .!any(fracs .< 0)
-                        # fractions cannot be greater than 1
-                        @test .!any(fracs .> 1)
-                    end
+for ν in 0:π/3:2π
+    for ω in 0:π/3:2π
+        for i in 0:π/10:π/2
+            for ε in 0:0.1:1-eps()
+                for a in a_range
+                    fake_orb = getOrbit(ω=ω, ε=ε, i=i, a=a)
+                    fake_binary = getBinary(fake_pri, fake_sec, fake_orb)
+                    
+                    fracs = get_visible_frac(fake_binary, ν)
+                    # they can't both be eclipsed at the same time
+                    @test any(fracs .== 1)
+                    # fractions cannot be less than 0
+                    @test .!any(fracs .< 0)
+                    # fractions cannot be greater than 1
+                    @test .!any(fracs .> 1)
                 end
             end
         end
     end
 end
+#end
 
 

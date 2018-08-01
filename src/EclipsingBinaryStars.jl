@@ -458,7 +458,7 @@ function area_of_overlap( ρ  :: Float64
                         , r₁ :: Float64
                         , r₂ :: Float64
                         )    :: Float64
-    @assert(abs(r₁ - r₂) < ρ < (r₁ + r₂), "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)")
+    #@assert(abs(r₁ - r₂) < ρ < (r₁ + r₂), "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)")
     x = (ρ^2 + r₁^2 - r₂^2)/(2⋅ρ)
     #println("x = ",x)
     A_s₁ = (r₁^2)⋅acos(x/r₁) - x⋅√(r₁^2 - x^2)
@@ -485,7 +485,10 @@ function get_visible_frac( s :: Binary
     χ,ψ,ζ = get_sky_pos(s.orb,ν)
     ρ = √(χ^2 + ψ^2)    # get separation
 
-    if ρ > s.pri.r + s.sec.r    # no eclipse
+    @show ρ
+    @show s.pri.r
+    @show s.sec.r
+    if ρ >= s.pri.r + s.sec.r    # no eclipse
         return (1,1)
     end
 
