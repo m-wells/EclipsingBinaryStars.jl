@@ -23,13 +23,22 @@ struct Orbit
     a  :: Float64  # semi-major axis [R⊙]
 end
 
-function Base.show(io::IO, orb::Orbit)
+function Base.show( io :: IO
+                  , v  :: Orbit
+                  )
     print( io
-         , "ω = ", orb.ω
-         , "ε = ", orb.ε
-         , "i = ", orb.i
-         , "a = ", orb.a
+         , "    ω = ", v.ω
+         , "    ε = ", v.ε
+         , "    i = ", v.i
+         , "    a = ", v.a
          )
+end
+
+function Base.show{T}( io :: IO
+                     ,    :: MIME"text/plain"
+                     , v  :: Orbit{T}
+                     )
+    print(io, "Orbit{$T}:\n   ", v)
 end
 
 #---------------------------------------------------------------------------------------------------
