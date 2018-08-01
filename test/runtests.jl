@@ -115,4 +115,44 @@ end
     end
 end
 
+#---------------------------------------------------------------------------------------------------
+####################################################################################################
+#---------------------------------------------------------------------------------------------------
+
+@testset "critical_νs" begin
+    fake_pri = getStar(m=5, r=2)
+    fake_sec = getStar(m=1, r=1)
+    
+    a_range = [3.0, 30.0, 300.0, 3000.0, 30000.0]
+    
+    for ω in 0:π/3:2π
+        for i in 0:π/10:π/2
+            for ε in 0:0.1:1-eps()
+                for a in a_range
+                    #@show (ν,ω,i,ε,a)
+                    fake_orb = getOrbit(ω=ω, ε=ε, i=i, a=a)
+                    fake_binary = getBinary(fake_pri, fake_sec, fake_orb)
+                    
+                    valid_binary = periastron_check(fake_binary)
+                    if valid_binary
+                        νs,ms = determine_eclipsing_morphologies(fake_binary)
+
+                        for (ν_e,m) in zip(νs,ms)
+                            if m > 0
+                                νs_c = EclipsingBinaryStars.get_outer_critical_νs(fake_binary, ν_e)
+                                @test νs_c[1] < νs_c[2]
+                            end
+                            if m == 2
+                                νs_c = EclipsingBinaryStars.get_inner_critical_νs(fake_binary, ν_e)
+                                @test νs_c[1] < νs_c[2]
+                            end
+                        end
+
+                    end
+                end
+            end
+        end
+    end
+end
+
 
