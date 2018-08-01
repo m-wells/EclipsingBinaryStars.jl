@@ -34,8 +34,6 @@ function Base.show( io :: IO
          )
 end
 
-Base.show{T}(io::IO, ::MIME"text/plain", v::Orbit{T}) = print(io, "Orbit{$T}:\n   ", v)
-
 #---------------------------------------------------------------------------------------------------
 
 function getOrbit( ; ω = error("ω is not specified") :: Float64   # argument of periastron
