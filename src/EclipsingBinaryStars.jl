@@ -53,7 +53,18 @@ end
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
 
-function periastron_check( s :: Binary ) :: Bool
+"""
+function periastron_check
+
+input:
+    s :: Binary 
+    f :: threshold factor
+            1 means they can kiss (assuming spheres, which they aren't)
+            <1 means they would collide
+"""
+function periastron_check( s :: Binary 
+                         , f = 1.5
+                         ) :: Bool
     peridist = (1 - s.orb.ε)*s.orb.a
     return peridist >= s.pri.r + s.sec.r
 end
