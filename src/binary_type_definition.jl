@@ -27,10 +27,10 @@ function Base.show( io :: IO
                   , v  :: Orbit
                   )
     print( io
-         , "    ω = ", v.ω
-         , "    ε = ", v.ε
-         , "    i = ", v.i
-         , "    a = ", v.a, "R⊙"
+         , "   ω: ", v.ω
+         , " | ε: ", v.ε
+         , " | i: ", v.i
+         , " | a: ", v.a, " R⊙"
          )
 end
 
@@ -57,8 +57,8 @@ function Base.show( io :: IO
                   , v  :: Star
                   )
     print( io
-         , "    m = ", v.m, "M⊙"
-         , "    r = ", v.r, "R⊙"
+         , "   m = ", v.m, " M⊙"
+         , " | r = ", v.r, " R⊙"
          )
 end
 
@@ -127,7 +127,7 @@ function Base.show( io :: IO
          , "    pri: ", v.pri, "\n"
          , "    sec: ", v.sec, "\n"
          , "    orb: ", v.orb, "\n"
-         , "    period: ", v.P
+         , "      P: ", v.P
          )
 end
 
