@@ -207,7 +207,7 @@ function get_critical_νs( s   :: Binary
                         , ν_e :: Float64
                         , ρ_c :: Float64
                         )     :: Tuple{Float64,Float64}
-    tol = 0.001
+    tol = 0.01
 
     # define optimization function
     f(ν) = abs(get_ρ(s.orb, ν) - (ρ_c))
