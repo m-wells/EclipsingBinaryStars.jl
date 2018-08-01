@@ -464,7 +464,13 @@ function area_of_overlap( ρ  :: Float64
                         , r₁ :: Float64
                         , r₂ :: Float64
                         )    :: Float64
-    @assert(abs(r₁ - r₂) < ρ < (r₁ + r₂), "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)")
+    @assert( abs(r₁ - r₂) < ρ < (r₁ + r₂)
+           , string( "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)\n"
+                   , "\tr₁ = ", r₁, "\n"
+                   , "\tr₂ = ", r₂, "\n"
+                   , "\tρ = " , ρ , "\n"
+                   )
+           )
     x = (ρ^2 + r₁^2 - r₂^2)/(2⋅ρ)
     #println("x = ",x)
     A_s₁ = (r₁^2)⋅acos(x/r₁) - x⋅√(r₁^2 - x^2)
