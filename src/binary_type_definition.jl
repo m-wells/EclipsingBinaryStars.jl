@@ -30,7 +30,7 @@ function Base.show( io :: IO
          , "    ω = ", v.ω
          , "    ε = ", v.ε
          , "    i = ", v.i
-         , "    a = ", v.a
+         , "    a = ", v.a, "R⊙"
          )
 end
 
@@ -51,6 +51,15 @@ end
 struct Star
     m :: Float64   # mass
     r :: Float64   # radius
+end
+
+function Base.show( io :: IO
+                  , v  :: Star
+                  )
+    print( io
+         , "    m = ", v.m, "M⊙"
+         , "    r = ", v.r, "R⊙"
+         )
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -109,6 +118,17 @@ struct Binary
     sec :: Star
     orb :: Orbit
     P   :: Float64
+end
+
+function Base.show( io :: IO
+                  , v  :: Binary
+                  )
+    print( io
+         , "    pri: ", v.pri, "\n"
+         , "    sec: ", v.sec, "\n"
+         , "    orb: ", v.orb, "\n"
+         , "    period: ", v.P
+         )
 end
 
 #---------------------------------------------------------------------------------------------------
