@@ -56,7 +56,7 @@ Get eclipse morphology
 function eclipse_morphology_at_ν( s :: Binary
                                 , ν :: Float64
                                 )   :: Int
-    ρ = abs(get_sky_pos(s.orb,ν)[2])
+    ρ = get_ρ(s,ν)
     if ρ < abs(s.pri.r - s.sec.r)
         m = 2   # annular / or total
     elseif ρ > s.pri.r + s.sec.r
