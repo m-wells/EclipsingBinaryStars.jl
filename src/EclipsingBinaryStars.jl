@@ -216,8 +216,8 @@ function get_critical_νs( s   :: Binary
     θ1,θ2,θ3 = get_critical_bounds(s.orb, ν_e)
 
     res = optimize(f, θ1, θ2, Brent())
-    val = abs(Optim.minimum(res))
-    @assert( converged(res) || (val < tol)
+    val = abs(Optim.minimum(res))   # y-value of root finding
+    @assert( Optim.converged(res) || (val < tol)
            , string( "Solution appears to be incorrect!\n"
                    , "\tval = "       , val            , "\n"
                    , "\ttol = "       , tol            , "\n"
@@ -229,8 +229,8 @@ function get_critical_νs( s   :: Binary
     ν1 = Optim.minimizer(res)
 
     res = optimize(f, θ2, θ3, Brent())
-    val = abs(Optim.minimum(res))
-    @assert( converged(res) || (val < tol)
+    val = abs(Optim.minimum(res))   # y-value of root finding
+    @assert( Optim.converged(res) || (val < tol)
                    , string( "Solution appears to be incorrect!\n"
                    , "\tval = "       , val            , "\n"
                    , "\ttol = "       , tol            , "\n"
