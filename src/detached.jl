@@ -58,7 +58,7 @@ function detached_check( s :: Binary ) :: Bool
     q     = M2/M1
 
     Ωpole   = get_Ωpole(ϱpole, q, δ)
-    Ωpole2  = get_Ωpole(Ωpole, q)
+    Ωpole2  = get_Ωpole2(Ωpole, q)
     ΩL1crit = get_ΩL1(M1, M2, ε, δ)
 
     if (Ωpole > ΩL1crit) && (Ωpole2 > ΩL1crit)
