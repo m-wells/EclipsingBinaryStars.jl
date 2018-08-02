@@ -564,17 +564,17 @@ function get_visible_frac( s :: Binary
     if morph == 2   # total/annular eclipse
         if ζ > 0    # secondary is in front
             if ρ + s.sec.r < s.pri.r    # sep + sec radius is less than pri radius
-                                        # secondary is causing an annular eclipse on primary
-                frac = (area1-area2)/area1
+                # secondary is causing an annular eclipse on primary
+                frac = (area1 - area2)/area1
                 return (frac,1)
             else
                 # secondary is totally eclipsing primary
                 return (0,1)
             end
         else    # primary is in front
-            if ρ + s.sec.r < s.pri.r    # sep + sec radius is less than pri radius
-                                        # primary is causing an annular eclipse on secondary
-                frac = (area2-area1)/area2
+            if ρ + s.pri.r < s.sec.r    # sep + pri radius is less than sec radius
+                # primary is causing an annular eclipse on secondary
+                frac = (area2 - area1)/area2
                 return (1,frac)
             else    # primary is totally eclipsing secondary
                 return (1,0)
