@@ -52,14 +52,14 @@ end
 
 function detached_check( s :: Binary ) :: Bool
     ϱpole = s.pri.r/s.orb.a
-    M1    = s.pri.m
-    M2    = s.sec.m
     δ     = 1.0 - s.orb.ε
-    q     = M2/M1
+    q     = s.sec.m/s.pri.m
 
     Ωpole   = get_Ωpole(ϱpole, q, δ)
+
     Ωpole2  = get_Ωpole2(Ωpole, q)
-    ΩL1crit = get_ΩL1(M1, M2, ε, δ)
+
+    ΩL1crit = get_ΩL1(s.pri.m, s.sec.m, s.orb.ε, δ)
 
     if (Ωpole > ΩL1crit) && (Ωpole2 > ΩL1crit)
         return true
