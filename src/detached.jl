@@ -18,8 +18,8 @@ function get_Ω(ϱ, δ, q, λ, ν, F)
 end
 
 function get_Ωpole( ϱpole :: Float64
-                  , q     :: Float64
                   , δ     :: Float64
+                  , q     :: Float64
                   )       :: Float64
     #(1.0/ϱpole) + q/sqrt(δ^2 + ϱpole^2)
     return get_Ω(ϱpole, δ, q, 0, 1, 0)
@@ -60,7 +60,18 @@ function get_ΩL1(M1,M2,ε,δ)
     q = M2/M1
     F = get_syncpar(ε)
 
-    return get_Ω(ϱ, δ, q, 1.0, 0.0, F)
+    return try
+        get_Ω(ϱ, δ, q, 1.0, 0.0, F)
+    catch errval
+        @show M1
+        @show M2
+        @show ε
+        @show δ
+        @show ϱ
+        @show q
+        @show F
+        error(errval)
+    end
 end
 
 function get_ΩL2(M1,M2,ε,δ)
@@ -87,12 +98,12 @@ function detached_check( s :: Binary ) :: Bool
     # it is not sufficient to just check periastron/apastron
     for δ in δp:0.01:δa
         Ωpole_1 = get_Ωpole( ϱ_pri
-                           , q_pri
                            , δ
+                           , q_pri
                            )
         Ωpole_2 = get_Ωpole( ϱ_sec
-                           , q_sec
                            , δ
+                           , q_sec
                            )
 
         ΩL1crit = get_ΩL1(s.pri.m, s.sec.m, s.orb.ε, δ)
