@@ -37,32 +37,13 @@ function get_Ωpole( ϱ :: Float64
     return get_Ω(ϱ, δ, q, 0, 1, 0)
 end
 
-function get_Ω_pnt1( r1 :: Float64
-                   , δ  :: Float64
-                   , q  :: Float64
-                   , F  :: Float64
-                   )    :: Float64
-    #      get_Ω(ϱ, δ, q, λ, ν, F)
-    return get_Ω(ϱ, δ, q, 1, 0, F)
-end
-"""
-Get Omega (w.r.t. star 1)
-"""
-function get_Ω_pnt2( r2 :: Float64
-                   , δ  :: Float64
-                   , q  :: Float64
-                   , F  :: Float64
-                   )    :: Float64
-    #      get_Ω(ϱ, δ, q, λ, ν, F)
-    ϱ = δ - r2
-    return get_Ω(ϱ, δ, q, 1, 0, F)
-end
+
 #---------------------------------------------------------------------------------------------------
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
 function get_Ω_Lpnt( pnt :: Int
-                   , δ
                    , q
+                   , δ
                    , F
                    )
     ϱ = get_lagrangian_pnt(pnt,q,δ)
@@ -131,16 +112,17 @@ end
 #---------------------------------------------------------------------------------------------------
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
-function fillout_factor( r :: Float64
+function fillout_factor( ϱpole :: Float64
                        , δ :: Float64
                        , q :: Float64
-                       , F :: Float64
+                       , ε :: Float64
                        )   :: Float64
 
-    Ωpole = get_Ωpole(r, δ, q)
+    Ωpole = get_Ωpole(ϱpole, δ, q)
 
-    ΩL1 = get_Ω_Lpnt(1, δ, q, F)
-    ΩL2 = get_Ω_Lpnt(2, δ, q, F)
+    F = get_syncpar(ε)
+    ΩL1 = get_Ω_Lpnt(1, q, δ, F)
+    ΩL2 = get_Ω_Lpnt(2, q, δ, F)
     return (Ωpole - ΩL1)/(ΩL2 - ΩL1)
 end
 #---------------------------------------------------------------------------------------------------
@@ -267,47 +249,47 @@ end
 #    return ϱs
 #end
 
-function test_fillout()
-    q = 0.5
-    r1 = 0.2
-    r2 = 0.1
-    ε = 0.0
-    d = 1.0 - ε
-
-    println("d: ", d)
-    println("q: ", q)
-    println("ε: ", ε)
-
-    fval = fillout_factor(r1, d, q, ε)
-    println(fval)
-
-    q = 0.5
-    r1 = 0.2
-    r2 = 0.1
-    ε = 0.5
-    d = 1.0 - ε
-
-    println("d: ", d)
-    println("q: ", q)
-    println("ε: ", ε)
-    fval = fillout_factor(r1, d, q, ε)
-    println(fval)
-
-
-
-    q = 0.5
-    r1 = 0.2
-    r2 = 0.1
-    ε = 0.99
-    d = 1.0 - ε
-
-    println("d: ", d)
-    println("q: ", q)
-    println("ε: ", ε)
-    fval = fillout_factor(r1, d, q, ε)
-    println(fval)
-
-
-
-end
-test_fillout()
+#function test_fillout()
+#    q = 0.5
+#    r1 = 0.2
+#    r2 = 0.1
+#    ε = 0.0
+#    d = 1.0 - ε
+#
+#    println("d: ", d)
+#    println("q: ", q)
+#    println("ε: ", ε)
+#
+#    fval = fillout_factor(r1, d, q, ε)
+#    println(fval)
+#
+#    q = 0.5
+#    r1 = 0.2
+#    r2 = 0.1
+#    ε = 0.5
+#    d = 1.0 - ε
+#
+#    println("d: ", d)
+#    println("q: ", q)
+#    println("ε: ", ε)
+#    fval = fillout_factor(r1, d, q, ε)
+#    println(fval)
+#
+#
+#
+#    q = 0.5
+#    r1 = 0.2
+#    r2 = 0.1
+#    ε = 0.99
+#    d = 1.0 - ε
+#
+#    println("d: ", d)
+#    println("q: ", q)
+#    println("ε: ", ε)
+#    fval = fillout_factor(r1, d, q, ε)
+#    println(fval)
+#
+#
+#
+#end
+#test_fillout()
