@@ -11,7 +11,11 @@ include("lagrangian_points.jl")
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
 function get_syncpar( ε :: Float64 ) :: Float64
-    @assert(ε < 1.0, "eccentricity must be less than 1")
+    @assert( ε < 1.0
+           , string( "eccentricity must be less than 1 not "
+                   , ε
+                   )
+           )
     if ε >= 0.05
         return sqrt((1.0 + ε)/(1.0 - ε)^3.0)
     end
