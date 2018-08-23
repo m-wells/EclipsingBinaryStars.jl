@@ -27,7 +27,19 @@ end
 function get_Ω(ϱ, q, δ, λ, ν, F)
     # equation 3.16 PHOEBE
     term1 = 1/ϱ
-    term2 = q*( 1/sqrt(δ^2 + ϱ^2 - 2*ϱ*λ*δ) - ϱ*λ/(δ^2) )
+    sqrt_term = δ^2 + ϱ^2 - 2*ϱ*λ*δ
+    @assert( !(sqrt_term < 0)
+           , string( "issue in sqrt term"
+                   , "\n\texpected result to be non-negative instead of ", sqrt_term
+                   , "\n\tvarrho = ", ϱ
+                   , "\n\tq = "     , q
+                   , "\n\tdelta = " , δ
+                   , "\n\tlambda = ", λ
+                   , "\n\tnu = "    , ν
+                   , "\n\tF = "     , F
+                   )
+           )
+    term2 = q*( 1/sqrt(sqrt_term) - ϱ*λ/(δ^2) )
     term3 = 0.5*(F^2)*(1 + q)*(ϱ^2)*(1 - ν^2)
     return term1 + term2 + term3
 end
