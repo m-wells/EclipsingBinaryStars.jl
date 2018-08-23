@@ -66,7 +66,7 @@ end
 
 function getStar( ; m = error("m is not specified") :: Float64   # mass   [M⊙]
                   , r = error("r is not specified") :: Float64   # radius [R⊙]
-                )         :: Star
+                )                                   :: Star
     return Star(m, r)
 end
 

@@ -136,12 +136,11 @@ end
 function fillout_factor( ϱpole :: Float64
                        , δ :: Float64
                        , q :: Float64
-                       , ε :: Float64
+                       , F :: Float64
                        )   :: Float64
 
     Ωpole = get_Ωpole(ϱpole, δ, q)
 
-    F = get_syncpar(ε)
     ΩL1 = get_Ω_Lpnt(1, q, δ, F)
     ΩL2 = get_Ω_Lpnt(2, q, δ, F)
     return (Ωpole - ΩL1)/(ΩL2 - ΩL1)
