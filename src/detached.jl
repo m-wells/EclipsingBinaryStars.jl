@@ -33,30 +33,39 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
 
     xL1 = get_lagrangian_pnt(1,q,δp)
     # if either radii is over then not detached
-    if !(r1 < xL1) || !(r2 < δp - xL1)
+    if !(r1 < xL1)
         return (false,2)
+    end
+    if !(r2 < δp - xL1)
+        return (false,3)
     end
     #-----------------------------------------------------------------------------------------------
     F = get_syncpar(s.orb.ε)
 
     # potential at r1 w.r.t. star 1
-    Ω_pnt_1 = get_Ω_pnt1(r1, δp, q, F)
-    # potential at (δp - r2) w.r.t. star 1
-    Ω_pnt_2 = get_Ω_pnt2(r2, δp, q, F)
-    # potential at L1
-    Ω_L1    = get_Ω_Lpnt(1, δp, q, F)
+    Ωpnt_1 = get_Ωpnt(r1, δp, q, F)
+    # potential at L1 w.r.t. star 1
+    Ω1_L1  = get_Ω_Lpnt(1, δp, q, F)
 
-    if !(Ω_pnt_1 < Ω_L1) || !(Ω_pnt_2 < Ω_L1)
-        return (false,3)
+    if !(Ωpnt_1 < Ω1_L1)
+        return (false,4)
+    end
+
+    # potential at r2 w.r.t. star 2
+    Ωpnt_2 = get_Ωpnt(r2, δp, 1/q, F)
+    # potential at L1
+    Ω2_L1  = get_Ω_Lpnt(1, δp, 1/q, F)
+    if !(Ωpnt_2 < Ω2_L1)
+        return (false,5)
     end
     #-----------------------------------------------------------------------------------------------
 
-    ff_1 = fillout_factor(r1, δp, q, F)
-    ff_2 = fillout_factor(r2, δp, 1/q, F)
+    #ff_1 = fillout_factor(r1, δp, q, F)
+    #ff_2 = fillout_factor(r2, δp, 1/q, F)
 
-    if !(ff_1 < 0) || !(ff_2 < 0)
-        return (false,4)
-    end
+    #if !(ff_1 < 0) || !(ff_2 < 0)
+    #    return (false,4)
+    #end
     return (true,0)
     # it is not sufficient to just check periastron/apastron
     #for δ in δp:0.01:δa
