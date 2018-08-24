@@ -40,24 +40,42 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
         return (false,3)
     end
     #-----------------------------------------------------------------------------------------------
-    F = get_syncpar(s.orb.ε)
-
-    # potential at r1 w.r.t. star 1
-    Ωpnt_1 = get_Ωpnt(r1, δp, q, F)
-    # potential at L1 w.r.t. star 1
-    Ω1_L1  = get_Ω_Lpnt(1, δp, q, F)
-
-    if !(Ωpnt_1 < Ω1_L1)
+    roche_radius_1 = roche_eff_radius(δp,q)
+    v_star_1 = r1^3
+    v_roche_1 = roche_radius_1^3
+    fill_factor_1 = v_star_1/v_roche_1
+    if !(fill_factor_1 < 0.7)
         return (false,4)
     end
 
-    # potential at r2 w.r.t. star 2
-    Ωpnt_2 = get_Ωpnt(r2, δp, 1/q, F)
-    # potential at L1
-    Ω2_L1  = get_Ω_Lpnt(1, δp, 1/q, F)
-    if !(Ωpnt_2 < Ω2_L1)
+    roche_radius_2 = roche_eff_radius(δp,1/q)
+    v_star_2 = r2^3
+    v_roche_2 = roche_radius_2^3
+    fill_factor_2 = v_star_2/v_roche_2
+    if !(fill_factor_2 < 0.7)
         return (false,5)
     end
+    #-----------------------------------------------------------------------------------------------
+    return (true,0)
+    #-----------------------------------------------------------------------------------------------
+    #F = get_syncpar(s.orb.ε)
+
+    ## potential at r1 w.r.t. star 1
+    #Ωpnt_1 = get_Ωpnt(r1, δp, q, F)
+    ## potential at L1 w.r.t. star 1
+    #Ω1_L1  = get_Ω_Lpnt(1, δp, q, F)
+
+    #if !(Ωpnt_1 < Ω1_L1)
+    #    return (false,4)
+    #end
+
+    ## potential at r2 w.r.t. star 2
+    #Ωpnt_2 = get_Ωpnt(r2, δp, 1/q, F)
+    ## potential at L1
+    #Ω2_L1  = get_Ω_Lpnt(1, δp, 1/q, F)
+    #if !(Ωpnt_2 < Ω2_L1)
+    #    return (false,5)
+    #end
     #-----------------------------------------------------------------------------------------------
 
     #ff_1 = fillout_factor(r1, δp, q, F)
@@ -66,7 +84,6 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
     #if !(ff_1 < 0) || !(ff_2 < 0)
     #    return (false,4)
     #end
-    return (true,0)
     # it is not sufficient to just check periastron/apastron
     #for δ in δp:0.01:δa
     #    Ωpole_1 = get_Ωpole( ϱ_pri
