@@ -43,7 +43,7 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
         return (false,3)
     end
     #-----------------------------------------------------------------------------------------------
-    roche_radius_1 = roche_eff_radius(δp,q)
+    roche_radius_1 = roche_eff_radius(δp,q1)
     v_star_1 = r1^3
     v_roche_1 = roche_radius_1^3
     fill_factor_1 = v_star_1/v_roche_1
@@ -51,7 +51,7 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
         return (false,4)
     end
 
-    roche_radius_2 = roche_eff_radius(δp,1/q)
+    roche_radius_2 = roche_eff_radius(δp,q2)
     v_star_2 = r2^3
     v_roche_2 = roche_radius_2^3
     fill_factor_2 = v_star_2/v_roche_2
