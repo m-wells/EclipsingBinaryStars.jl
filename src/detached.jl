@@ -29,15 +29,16 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
         return (false,1)
     end
     #-----------------------------------------------------------------------------------------------
-    q = s.sec.m/s.pri.m
-
     # distance from M1 to L1
-    xL1_1 = get_lagrangian_pnt(1, s.pri.m, s.sec.m, δp)
+    q1 = s.sec.m/s.pri.m
+    xL1_1 = get_lagrangian_pnt(1, q1)*δp
     if !(r1 < xL1_1)
         return (false,2)
     end
+
     # distance from M2 to L1
-    xL1_2 = get_lagrangian_pnt(1, s.sec.m, s.pri.m, δp)
+    q2 = s.pri.m/s.sec.m
+    xL1_2 = get_lagrangian_pnt(1, q2)*δp
     if !(r2 < xL1_2)
         return (false,3)
     end
