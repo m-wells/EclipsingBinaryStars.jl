@@ -31,12 +31,14 @@ function detached_check( s :: Binary ) :: Tuple{Bool,Int}
     #-----------------------------------------------------------------------------------------------
     q = s.sec.m/s.pri.m
 
-    xL1 = get_lagrangian_pnt(1,q,δp)
-    # if either radii is over then not detached
-    if !(r1 < xL1)
+    # distance from M1 to L1
+    xL1_1 = get_lagrangian_pnt(1, s.pri.m, s.sec.m, δp)
+    if !(r1 < xL1_1)
         return (false,2)
     end
-    if !(r2 < δp - xL1)
+    # distance from M2 to L1
+    xL1_2 = get_lagrangian_pnt(1, s.sec.m, s.pri.m, δp)
+    if !(r2 < xL1_2)
         return (false,3)
     end
     #-----------------------------------------------------------------------------------------------
