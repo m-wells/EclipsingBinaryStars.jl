@@ -36,9 +36,9 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-function getOrbit( ; ω = error("ω is not specified") :: Float64   # argument of periastron
+function getOrbit( ; ω = error("ω is not specified") :: Float64   # argument of periastron [radians]
                    , ε = error("ε is not specified") :: Float64   # eccentricity
-                   , i = error("i is not specified") :: Float64   # inclination
+                   , i = error("i is not specified") :: Float64   # inclination [radians]
                    , a = error("a is not specified") :: Float64   # semi-major axis [R⊙]
                  )                                   :: Orbit
     return Orbit(ω, ε, i, a)
