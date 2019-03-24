@@ -5,7 +5,7 @@
     Distributed under terms of the MIT license.
 =#
 
-using Base.Test
+using Test
 using EclipsingBinaryStars
 
 #---------------------------------------------------------------------------------------------------

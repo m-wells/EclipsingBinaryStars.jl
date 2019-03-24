@@ -4,6 +4,19 @@
     Distributed under terms of the MIT license.
 =#
 
+#---------------------------------------------------------------------------------------------------
+primitive type EclipseType <: Integer 8 end
+#  0: primary is not eclipsed
+#  1: primary is partially eclipsed by secondary
+#  2: primary is fully eclipsed by secondary
+#  4: primary is transited by secondary
+#  8: secondary is not eclipsed
+# 16: secondary is partially eclipsed by primary
+# 32: secondary is fully eclipsed by primary
+# 64: secondary is transited by primary
+#---------------------------------------------------------------------------------------------------
+
+
 using Optim
 
 """
@@ -13,119 +26,125 @@ Letting the longitude of the ascending node Ω=0 means that the reference direct
 line of nodes. This allows for a convenient convention to be established. The x-axis of the orbital
 plane and the sky will be shared while the y axis of the orbital plane will be projected onto the
 plane of the sky by cos(i). We will denote the sky axes as χ (chi), ψ (psi), ζ (zeta). The plane of
-the sky where
+the sky axes are defined as
     χ = x
     ψ = y⋅cos(i)
     ζ = y⋅sin(i)
-ζ is the axis that points toward the observer and is useful for determining which star is in front
-of the other.
+where ζ is the axis that points toward the observer and is useful for determining which star is in
+front of the other. ζ > 0 means that the secondary is closer to the observer than the primary.
 
 In the plane of the orbit, the semi-major and semi-minor axes are rotated from the x and y axes by
 the angle ω, respectively.
 """
-function get_sky_pos( orb :: Orbit
-                    , ν   :: Float64
-                    )     :: Tuple{Float64,Float64,Float64}
+function get_sky_pos( b :: Binary
+                    , ν :: typeof(1.0u"rad")
+                    )
     # orbital separation
-    r = orb.a*(1 - orb.ε^2)/(1 + orb.ε⋅cos(ν))
+    r = b.a*(1 - b.ε^2)/(1 + b.ε⋅cos(ν))
     # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
     #x,y = rotmatrix(s.ω)*[r⋅cos(ν), r⋅sin(ν)]
-    x = r*cos(orb.ω)*cos(ν) - r*sin(orb.ω)*sin(ν)
-    y = r*sin(orb.ω)*cos(ν) + r*cos(orb.ω)*sin(ν)
+    x = r*cos(b.ω)*cos(ν) - r*sin(b.ω)*sin(ν)
+    y = r*sin(b.ω)*cos(ν) + r*cos(b.ω)*sin(ν)
     # need to incline orbital y
-    return x, y⋅cos(orb.i), y⋅sin(orb.i) 
+    return x, y⋅cos(b.i), y⋅sin(b.i)
 end
 
-function get_sky_pos( s :: Binary
-                    , ν :: Float64
-                    )   :: Tuple{Float64,Float64,Float64}
-    return get_sky_pos(s.orb, ν)
-end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-
 """
-function periastron_check
-
-input:
-    s :: Binary 
-    f :: threshold factor
-            1 means they can kiss (assuming spheres, which they aren't)
-            <1 means they would collide
+Return sky-projected separation in units of semi-major axis
 """
-function periastron_check( s :: Binary 
-                         , f = 1.5
-                         ) :: Bool
-    peridist = (1 - s.orb.ε)*s.orb.a
-    return peridist >= s.pri.r + s.sec.r
-end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-
-"""
-Get eclipse morphology
-    2 - annular or total 
-    1 - partial eclipse
-    0 - no eclipse
-"""
-function eclipse_morphology_at_ν( s :: Binary
-                                , ν :: Float64
-                                )   :: Int
-    ρ = get_ρ(s,ν)
-
-    if ρ >= s.pri.r + s.sec.r
-        # the '=' means they kiss but no eclipse
-        m = 0   # no eclipse
-    elseif ρ > abs(s.pri.r - s.sec.r)
-        # partial
-        m = 1
-    elseif ρ >= 0
-        m = 2   # annular / or total
-    else
-        error(string( "ρ is not recognized: ρ = "
-                    , ρ
-                    )
-             )
-    end
-    return m
-end
-
-function eclipse_morphology_at_nu(s :: Binary, ν :: Float64)   :: Int
-    return eclipse_morphology_at_ν(s :: Binary, nu :: Float64)   :: Int
-end
-
-#---------------------------------------------------------------------------------------------------
-
-function determine_eclipsing_morphologies( s :: Binary) :: Tuple{ Tuple{Float64,Float64}
-                                                                , Tuple{Int,Int}
-                                                                }
-    ν = (π/2-s.orb.ω, 3π/2-s.orb.ω)     # critical potential eclipse points
-    morphs = eclipse_morphology_at_ν.(s,ν) 
-    return ν,morphs
-end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-
-"""
-Return projected separation in units of semi-major axis
-"""
-function get_ρ( s :: Orbit
-              , ν :: Float64
-              )   :: Float64
-    x,y,z = get_sky_pos(s,ν)
+function get_ρ( b :: Binary
+              , ν :: typeof(1.0u"rad")
+              )
+    x,y,_ = get_sky_pos(b,ν)
     return √(x^2 + y^2)
 end
 
-function get_ρ( s :: Binary
-              , ν :: Float64
-              )   :: Float64
-    return get_ρ(s.orb, ν)
+
+#---------------------------------------------------------------------------------------------------
+####################################################################################################
+#---------------------------------------------------------------------------------------------------
+
+"""
+eclipse_geometry_at_ν
+
+S₁ is the center of star 1
+    ---) is the radius of star 1
+S₂ is the center of star 2
+    (--- is the radius of star 2
+
+0 - no eclipse
+[-----ρ----]
+S₁---)
+      (---S₂
+ρ >= S₁.r + S₂.r
+
+2 - annular or total
+[---ρ---]
+S₁----------)
+   (---S₂---)
+if R is the larger radius and r is the smaller
+then a total or annular eclipse happens when R >= ρ+r
+which can be rewritten as ρ <= R - r
+R - r = abs(S₁.r - S₂.r)
+ρ <= abs(S₁.r - S₂.r)
+
+1 - partial eclipse
+[---------ρ---------]
+S₁----------)
+           (---S₂---)
+abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
+"""
+function eclipse_geometry_at_ν( s :: Binary
+                              , ν :: typeof(1.0u"rad")
+                              )   :: EclipseType
+
+    x,y,z = get_sky_pos(b,ν)
+    ρ = sqrt(x^2+y^2)
+
+    if ρ >= s.pri.r + s.sec.r           # no eclipse case
+        if z > 0                        # secondary is in front
+            return 0                    #   primary is not eclipsed
+        else                            # primary is in front
+            return 8                    #   secondary is not eclipsed
+        end
+
+    elseif ρ > abs(s.pri.r - s.sec.r)   # partial case
+        if z > 0                        # secondary is in front
+            return 1                    #   primary is partially eclipsed
+        else                            # primary is in front
+            return 16                   #   secondary is partially eclipsed
+        end
+
+    elseif ρ >= 0
+        if s.pri.r > s.sec.r            # primary is larger
+            if z > 0                    #   secondary is in front
+                return 4                #       primary is transited
+            else                        #   primary is in front
+                return 32               #       secondary is fully eclipsed
+            end
+        elseif s.pri.r < s.sec.r        # secondary is larger
+            if z > 0                    #   secondary is in front
+                return 2                #       primary is fully eclipsed
+            else                        #   primary is in front
+                return 64               #       secondary is transited
+            end
+        else                    # if primary and secondary are same size
+            if iszero(ρ)        #   need to be perfectly aligned (or it would be a partial eclipse)
+                if z > 0        #   secondary is in front
+                    return 2    #       primary is fully eclipsed
+                else            #   primary is in front
+                    return 32   #       secondary is fully eclipsed
+                else
+            else
+                error(string( "To have a non-partial eclipse by equal size "
+                            , "stars ρ needs to be 0 not $ρ"
+                            )
+                     )
+            end
+        end
+    else
+        error("Unexpected value of ρ: $ρ")
+    end
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -136,7 +155,7 @@ end
 function get_critical_bounds
 
 Input
-    orb -> Orbit
+    ω   -> argument of periastron
     ν_e -> true anomaly at mid eclipse
 
 Output
@@ -146,18 +165,18 @@ Output
 
 Get the left and right bounds for the numerical solver.
 """
-function get_critical_bounds( orb :: Orbit
-                            , ν_e :: Float64
-                            )     :: Tuple{Float64,Float64,Float64}
+function get_critical_bounds( ω   :: typeof(1.0u"rad")
+                            , ν_e :: typeof(1.0u"rad")
+                            )
 
-    θ1 = -orb.ω
-    θ3 = pi - orb.ω
+    θ1 = -ω
+    θ3 = pi - ω
     if θ1 < ν_e <= θ3
-        θ2 = pi/2 - orb.ω
+        θ2 = pi/2 - ω
     else
-        θ1 = pi - orb.ω
-        θ2 = 3*pi/2 - orb.ω
-        θ3 = 2*pi - orb.ω
+        θ1 = pi - ω
+        θ2 = 3*pi/2 - ω
+        θ3 = 2*pi - ω
     end
     return θ1,θ2,θ3
 end
@@ -174,6 +193,25 @@ end
 #   using Brents Method
 #  0.000019 seconds (4 allocations: 352 bytes)
 
+function get_critical_ν(b, ρ_c, θₗ, θᵣ)
+    res = optimize( ν -> abs(get_ρ(b, ν) - (ρ_c))
+                  , θₗ, θᵣ, Brent()
+    res = optimize( ν -> abs(get_ρ(b, ν) - (ρ_c))
+                  , θ1, θ2, Brent()
+                  )
+    val = abs(Optim.minimum(res))   # y-value of root finding
+    @assert( Optim.converged(res) || (val < tol)
+           , string( "Solution appears to be incorrect!\n"
+                   , "\tval = "       , val            , "\n"
+                   , "\ttol = "       , tol            , "\n"
+                   , "\tθ1 = "        , θ1             , "\n"
+                   , "\tθ2 = "        , θ2             , "\n"
+                   , "\tconverged = " , converged(res) , "\n"
+                   )
+           )
+    return Optim.minimizer(res)
+end
+
 """
 function get_critical_νs
 
@@ -184,31 +222,37 @@ Input:
     ρ_c -> projected separation at critical contact points
 Output:
 
-Get the true anomaly for critical points of the eclipse. For an eclipse that occurs at ν_e = π/2 - ω 
+Get the true anomaly for critical points of the eclipse. For an eclipse that occurs at ν_e = π/2 - ω
+    ---------------------
     (partial and total/annular)
     1st contact point x² + y² = r₁² + r₂²       where x > 0, y > 0
+    ---------------------
     (total/annular)
-    1st contact point x² + y² = abs(r₁² - r₂²)  where x > 0, y > 0
+    2nd contact point x² + y² = abs(r₁² - r₂²)  where x > 0, y > 0
+    ---------------------
     (total/annular)
     3nd contact point x² + y² = abs(r₁² - r₂²)  where x < 0, y > 0
+    ---------------------
     (partial and total/annular)
     4th contact point x² + y² = r₁² + r₂²       where x < 0, y > 0
+    ---------------------
 for eclipse at ν + ω = 3π/2
     similar to the above except y < 0
 """
-function get_critical_νs( s   :: Binary
+function get_critical_νs( b   :: Binary
                         , ν_e :: Float64
                         , ρ_c :: Float64
+                        ; tol = 0.01
                         )     :: Tuple{Float64,Float64}
-    tol = 0.01
 
     # define optimization function
-    f(ν) = abs(get_ρ(s.orb, ν) - (ρ_c))
 
     # bounding angles for the root finding
-    θ1,θ2,θ3 = get_critical_bounds(s.orb, ν_e)
+    θ1,θ2,θ3 = get_critical_bounds(s.ω, ν_e)
 
-    res = optimize(f, θ1, θ2, Brent())
+    res = optimize( ν -> abs(get_ρ(b, ν) - (ρ_c))
+                  , θ1, θ2, Brent()
+                  )
     val = abs(Optim.minimum(res))   # y-value of root finding
     @assert( Optim.converged(res) || (val < tol)
            , string( "Solution appears to be incorrect!\n"
@@ -300,7 +344,7 @@ function get_transit_duration_partial( s   :: Binary
                                      )     :: Float64
 
     ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
-        
+
     return get_time_btw_νs(s, ν₁, ν₄)
 end
 #---------------------------------------------------------------------------------------------------
@@ -466,8 +510,8 @@ coordinates (x,y) and (x,-y). Using the equation of a circle we can write
           x² + y² = r₁²
     (x - ρ)² + y² = r₂²
 which yields
-    r₂² - (x - ρ)² = r₁² - x² 
-    r₂² - (x² - 2xρ + ρ²) = r₁² - x² 
+    r₂² - (x - ρ)² = r₁² - x²
+    r₂² - (x² - 2xρ + ρ²) = r₁² - x²
     r₂² + 2xρ - ρ² = r₁²
     2xρ = ρ² + r₁² - r₂²
     x = (ρ² + r₁² - r₂²)/(2ρ)
@@ -480,7 +524,7 @@ which allows for the calculation of A_w₁
     A_w₁ = (θ₁/2)⋅r₁²
     A_w₁ = (2⋅acos(x/r₁)/2)⋅r₁²
     A_w₁ = r₁²⋅acos(x/r₁)
-A_t₁ is 
+A_t₁ is
     A_t₁ = 2⋅(¹/₂)⋅x⋅y
     A_t₁ = x⋅y
 where
@@ -493,7 +537,7 @@ For A_s₂, we swap r₁ with r₂ and x with (ρ - x)
     A_s₂ = A_w₂ - A_t₂
          = r₂²⋅acos((ρ-x)/r₂) - (ρ - x)⋅√(r₂² - (ρ - x)²)
 
-The follow function returns
+The following function returns
 A_s₁ + A_s₂
 """
 function area_of_overlap( ρ  :: Float64
@@ -579,18 +623,18 @@ function get_visible_frac( s :: Binary
     end
 end
 
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-
-#function timer_func( s :: Binary
-#                   , ν :: Float64
-#                   )   :: Tuple{Float64,Float64}
-#    @time retval = get_outer_critical_νs(s, ν)
-#    #@time retval = get_inner_critical_νs(s, ν)
-#    return retval
+#"""
+#function periastron_check
+#
+#input:
+#    s :: Binary
+#    f :: threshold factor
+#            1 means they can kiss (assuming spheres, which they aren't)
+#            <1 means they would collide
+#"""
+#function periastron_check( s :: Binary
+#                         , f = 1.5
+#                         ) :: Bool
+#    peridist = (1 - s.orb.ε)*s.orb.a
+#    return peridist >= s.pri.r + s.sec.r
 #end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
