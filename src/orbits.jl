@@ -6,15 +6,38 @@
 
 #---------------------------------------------------------------------------------------------------
 primitive type EclipseType <: Integer 8 end
-#  0: primary is not eclipsed
-#  1: primary is partially eclipsed by secondary
-#  2: primary is fully eclipsed by secondary
-#  4: primary is transited by secondary
-#  8: secondary is not eclipsed
-# 16: secondary is partially eclipsed by primary
-# 32: secondary is fully eclipsed by primary
-# 64: secondary is transited by primary
+# 0: no eclipse
+# 1: primary is partially eclipsed by secondary
+# 2: primary is fully eclipsed by secondary
+# 3: primary is transited by secondary
+# 4: secondary is partially eclipsed by primary
+# 5: secondary is fully eclipsed by primary
+# 6: secondary is transited by primary
 #---------------------------------------------------------------------------------------------------
+EclipseType(x :: Int64) = reinterpret(EclipseType, convert(Int8, x))
+EclipseType(x :: Int8) = reinterpret(EclipseType, x)
+Int8(x :: EclipseType) = reinterpret(Int8, x)
+Base.show(io :: IO, x :: EclipseType) = begin
+    print(io, Int8(x))
+    if x == EclipseType(0)
+        print(io, ": no eclipse")
+    elseif x == EclipseType(1)
+        print(io, ": primary is partially eclipsed by secondary")
+    elseif x == EclipseType(2)
+        print(io, ": primary is fully eclipsed by secondary")
+    elseif x == EclipseType(3)
+        print(io, ": primary is transited by secondary")
+    elseif x == EclipseType(4)
+        print(io, ": secondary is partially eclipsed by primary")
+    elseif x == EclipseType(5)
+        print(io, ": secondary is fully eclipsed by primary")
+    elseif x == EclipseType(6)
+        print(io, ": secondary is transited by primary")
+    else
+        print(io, ": unknown")
+    end
+end
+
 
 
 using Optim
@@ -36,26 +59,26 @@ front of the other. ζ > 0 means that the secondary is closer to the observer th
 In the plane of the orbit, the semi-major and semi-minor axes are rotated from the x and y axes by
 the angle ω, respectively.
 """
-function get_sky_pos( b :: Binary
+function get_sky_pos( o :: Orbit
                     , ν :: typeof(1.0u"rad")
                     )
     # orbital separation
-    r = b.a*(1 - b.ε^2)/(1 + b.ε⋅cos(ν))
+    r = o.a*(1 - o.ε^2)/(1 + o.ε*cos(ν))
     # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
     #x,y = rotmatrix(s.ω)*[r⋅cos(ν), r⋅sin(ν)]
-    x = r*cos(b.ω)*cos(ν) - r*sin(b.ω)*sin(ν)
-    y = r*sin(b.ω)*cos(ν) + r*cos(b.ω)*sin(ν)
+    x = r*cos(o.ω)*cos(ν) - r*sin(o.ω)*sin(ν)
+    y = r*sin(o.ω)*cos(ν) + r*cos(o.ω)*sin(ν)
     # need to incline orbital y
-    return x, y⋅cos(b.i), y⋅sin(b.i)
+    return x, y*cos(o.i), y*sin(o.i)
 end
 
 """
 Return sky-projected separation in units of semi-major axis
 """
-function get_ρ( b :: Binary
+function get_ρ( o :: Orbit
               , ν :: typeof(1.0u"rad")
               )
-    x,y,_ = get_sky_pos(b,ν)
+    x,y,_ = get_sky_pos(o,ν)
     return √(x^2 + y^2)
 end
 
@@ -63,9 +86,18 @@ end
 #---------------------------------------------------------------------------------------------------
 ####################################################################################################
 #---------------------------------------------------------------------------------------------------
+function eclipse_morphs( s :: Binary
+                       )
+    # potential critical eclipse points
+    ν1 = 0.5π*u"rad" - s.orb.ω
+    ν2 = 1.5π*u"rad" - s.orb.ω
+
+    return (ν1,ν2),(eclipse_morph_at_ν(s,ν1), eclipse_morph_at_ν(s,ν2))
+end
+
 
 """
-eclipse_geometry_at_ν
+eclipse_morph_at_ν
 
 S₁ is the center of star 1
     ---) is the radius of star 1
@@ -94,52 +126,45 @@ S₁----------)
            (---S₂---)
 abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
 """
-function eclipse_geometry_at_ν( s :: Binary
-                              , ν :: typeof(1.0u"rad")
-                              )   :: EclipseType
+function eclipse_morph_at_ν( s :: Binary
+                           , ν :: typeof(1.0u"rad")
+                           )   :: EclipseType
 
-    x,y,z = get_sky_pos(b,ν)
+    x,y,z = get_sky_pos(s.orb,ν)
     ρ = sqrt(x^2+y^2)
 
     if ρ >= s.pri.r + s.sec.r           # no eclipse case
-        if z > 0                        # secondary is in front
-            return 0                    #   primary is not eclipsed
-        else                            # primary is in front
-            return 8                    #   secondary is not eclipsed
-        end
+        return EclipseType(0)
 
     elseif ρ > abs(s.pri.r - s.sec.r)   # partial case
-        if z > 0                        # secondary is in front
-            return 1                    #   primary is partially eclipsed
+        if z.val > 0                    # secondary is in front
+            return EclipseType(1)       #   primary is partially eclipsed
         else                            # primary is in front
-            return 16                   #   secondary is partially eclipsed
+            return EclipseType(4)       #   secondary is partially eclipsed
         end
 
-    elseif ρ >= 0
-        if s.pri.r > s.sec.r            # primary is larger
-            if z > 0                    #   secondary is in front
-                return 4                #       primary is transited
-            else                        #   primary is in front
-                return 32               #       secondary is fully eclipsed
+    elseif ρ.val >= 0                   # total/annular cases
+        if s.pri.r > s.sec.r                # primary is larger
+            if z.val > 0                    #   secondary is in front
+                return EclipseType(3)       #       primary is transited
+            else                            #   primary is in front
+                return EclipseType(5)       #       secondary is fully eclipsed
             end
-        elseif s.pri.r < s.sec.r        # secondary is larger
-            if z > 0                    #   secondary is in front
-                return 2                #       primary is fully eclipsed
-            else                        #   primary is in front
-                return 64               #       secondary is transited
+        elseif s.pri.r < s.sec.r            # secondary is larger
+            if z.val > 0                    #   secondary is in front
+                return EclipseType(2)       #       primary is fully eclipsed
+            else                            #   primary is in front
+                return EclipseType(6)       #       secondary is transited
             end
-        else                    # if primary and secondary are same size
-            if iszero(ρ)        #   need to be perfectly aligned (or it would be a partial eclipse)
-                if z > 0        #   secondary is in front
-                    return 2    #       primary is fully eclipsed
-                else            #   primary is in front
-                    return 32   #       secondary is fully eclipsed
-                else
+        else                                # if primary and secondary are same size
+            if iszero(ρ.val)                #   need to be perfectly aligned (or it would be a partial eclipse)
+                if z.val > 0                #   secondary is in front
+                    return EclipseType(2)   #       primary is fully eclipsed
+                else                        #   primary is in front
+                    return EclipseType(5)   #       secondary is fully eclipsed
+                end
             else
-                error(string( "To have a non-partial eclipse by equal size "
-                            , "stars ρ needs to be 0 not $ρ"
-                            )
-                     )
+                error("To have a non-partial eclipse by equal size stars ρ needs to be 0 not $ρ")
             end
         end
     else
@@ -168,7 +193,6 @@ Get the left and right bounds for the numerical solver.
 function get_critical_bounds( ω   :: typeof(1.0u"rad")
                             , ν_e :: typeof(1.0u"rad")
                             )
-
     θ1 = -ω
     θ3 = pi - ω
     if θ1 < ν_e <= θ3
@@ -193,23 +217,25 @@ end
 #   using Brents Method
 #  0.000019 seconds (4 allocations: 352 bytes)
 
-function get_critical_ν(b, ρ_c, θₗ, θᵣ)
-    res = optimize( ν -> abs(get_ρ(b, ν) - (ρ_c))
-                  , θₗ, θᵣ, Brent()
-    res = optimize( ν -> abs(get_ρ(b, ν) - (ρ_c))
-                  , θ1, θ2, Brent()
+function get_critical_ν( b :: Binary
+                       , ρ_c :: typeof(1.0u"Rsun")
+                       , θₗ  :: typeof(1.0u"rad")
+                       , θᵣ  :: typeof(1.0u"rad")
+                       ; tol = 0.001
+                       )
+    res = optimize( ν -> abs(get_ρ(b, ν).val - ρ_c.val)
+                  , θₗ.val, θᵣ.val, Brent()
                   )
-    val = abs(Optim.minimum(res))   # y-value of root finding
-    @assert( Optim.converged(res) || (val < tol)
+    @assert( Optim.converged(res) || (abs(Optim.minimum(res)) < tol)
            , string( "Solution appears to be incorrect!\n"
-                   , "\tval = "       , val            , "\n"
-                   , "\ttol = "       , tol            , "\n"
-                   , "\tθ1 = "        , θ1             , "\n"
-                   , "\tθ2 = "        , θ2             , "\n"
-                   , "\tconverged = " , converged(res) , "\n"
+                   , "\tval = $(abs(Optim.minimum(res)))\n"
+                   , "\ttol = $(tol)\n"
+                   , "\tθₗ = $(θₗ)\n"
+                   , "\tθᵣ = $(θᵣ)\n"
+                   , "\tconverged = $(converged(res))\n"
                    )
            )
-    return Optim.minimizer(res)
+    return mod2pi(Optim.minimizer(res))u"rad"
 end
 
 """
@@ -240,52 +266,23 @@ for eclipse at ν + ω = 3π/2
     similar to the above except y < 0
 """
 function get_critical_νs( b   :: Binary
-                        , ν_e :: Float64
-                        , ρ_c :: Float64
-                        ; tol = 0.01
-                        )     :: Tuple{Float64,Float64}
-
-    # define optimization function
+                        , ν_e :: typeof(1.0u"rad")
+                        , ρ_c :: typeof(1.0u"Rsun")
+                        ; tol = 0.001
+                        )
 
     # bounding angles for the root finding
     θ1,θ2,θ3 = get_critical_bounds(s.ω, ν_e)
 
+
     res = optimize( ν -> abs(get_ρ(b, ν) - (ρ_c))
                   , θ1, θ2, Brent()
                   )
-    val = abs(Optim.minimum(res))   # y-value of root finding
-    @assert( Optim.converged(res) || (val < tol)
-           , string( "Solution appears to be incorrect!\n"
-                   , "\tval = "       , val            , "\n"
-                   , "\ttol = "       , tol            , "\n"
-                   , "\tθ1 = "        , θ1             , "\n"
-                   , "\tθ2 = "        , θ2             , "\n"
-                   , "\tconverged = " , converged(res) , "\n"
-                   )
-           )
-    ν1 = Optim.minimizer(res)
+    ν1 = get_critical_ν(b, ρ_c, θ1, θ2, tol = tol)
+    ν2 = get_critical_ν(b, ρ_c, θ2, θ3, tol = tol)
 
-    res = optimize(f, θ2, θ3, Brent())
-    val = abs(Optim.minimum(res))   # y-value of root finding
-    @assert( Optim.converged(res) || (val < tol)
-                   , string( "Solution appears to be incorrect!\n"
-                   , "\tval = "       , val            , "\n"
-                   , "\ttol = "       , tol            , "\n"
-                   , "\tθ2 = "        , θ2             , "\n"
-                   , "\tθ3 = "        , θ3             , "\n"
-                   , "\tconverged = " , converged(res) , "\n"
-                   )
-           )
-
-    ν2 = Optim.minimizer(res)
-
-    if ν1 > ν2
-        ν2 += 2π
-    end
     return (ν1,ν2)
 end
-
-#---------------------------------------------------------------------------------------------------
 
 """
 function get_outer_critical_νs
@@ -299,13 +296,11 @@ Output
     ν₄ -> true anomaly at last contact
 
 """
-function get_outer_critical_νs( s   :: Binary
-                              , ν_e :: Float64
-                              )     :: Tuple{Float64,Float64}
-    return get_critical_νs(s, ν_e, abs(s.pri.r + s.sec.r))
+function get_outer_critical_νs( b   :: Binary
+                              , ν_e :: typeof(1.0u"rad")
+                              )
+    return get_critical_νs(b, ν_e, b.pri.r + b.sec.r)
 end
-
-#---------------------------------------------------------------------------------------------------
 
 """
 function get_inner_critical_νs
@@ -320,62 +315,18 @@ Output
 
 Note: these are only defined for total/annular eclipsers.
 """
-
-function get_inner_critical_νs( s   :: Binary
-                              , ν_e :: Float64
-                              )     :: Tuple{Float64,Float64}
-    return get_critical_νs(s, ν_e, abs(s.pri.r - s.sec.r))
+function get_inner_critical_νs( b   :: Binary
+                              , ν_e :: typeof(1.0u"rad")
+                              )
+    return get_critical_νs(b, ν_e, abs(b.pri.r - b.sec.r))
 end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-
-"""
-function get_transit_duration_partial
-
-Input
-    s   -> Binary
-    ν_e -> true anomaly of mid eclipse
-"""
-
-function get_transit_duration_partial( s   :: Binary
-                                     , ν_e :: Float64
-                                     )     :: Float64
-
-    ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
-
-    return get_time_btw_νs(s, ν₁, ν₄)
-end
-#---------------------------------------------------------------------------------------------------
-
-"""
-function get_transit_duration_totann
-    s   -> Binary
-    ν_e -> true anomaly of mid eclipse
-"""
-
-function get_transit_duration_totann( s   :: Binary
-                                    , ν_e :: Float64
-                                    )     :: Float64
-
-    ν₂,ν₃ = get_inner_critical_νs(s, ν_e)
-    if ν₃ < ν₂
-        ν₃ += 2π
-    end
-    return get_time_btw_νs(s, ν₂, ν₃)
-end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
 
 """
 https://en.wikipedia.org/wiki/Eccentric_anomaly
 """
 function get_E_from_ν( o :: Orbit
-                     , ν :: Float64
-                     )   :: Float64
+                     , ν :: typeof(1.0u"rad")
+                     )
     ea = atan2( √(1 - o.ε^2)*sin(ν)
               , o.ε + cos(ν)
               )
@@ -386,31 +337,27 @@ function get_E_from_ν( o :: Orbit
     if (ν > 3π/2) && (ea < π/2)
         ea += 2π
     end
-    return ea
+    return ea*u"rad"
 end
-
-#---------------------------------------------------------------------------------------------------
 
 """
 https://en.wikipedia.org/wiki/Eccentric_anomaly
 """
 function get_ν_from_E( o :: Orbit
-                     , E :: Float64
-                     )   :: Float64
+                     , E :: typeof(1.0u"rad")
+                     )
     return 2⋅atan2( √(1 - o.ε)*cos(E/2)
                   , √(1 + o.ε)*sin(E/2)
-                  )
+                  )u"rad"
 end
-
-#---------------------------------------------------------------------------------------------------
 
 """
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
 function get_M_from_E( o :: Orbit
-                     , E :: Float64
+                     , E :: typeof(1.0u"rad")
                      )
-    return E - o.ε*sin(E)
+    return E - o.ε*sin(E)*u"rad"
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -419,7 +366,7 @@ end
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
 function get_M_from_ν( o :: Orbit
-                     , ν :: Float64
+                     , ν :: typeof(1.0u"rad")
                      )
     E = get_E_from_ν(o,ν)
     return get_M_from_E(o,E)
@@ -431,10 +378,10 @@ end
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
 function get_E_from_M( o :: Orbit
-                     , M :: Float64
-                     )   :: Float64
+                     , M :: typeof(1.0u"rad")
+                     ; tol = 0.001
+                     )
 
-    tol = 0.001
 
     f(E) = abs(E - o.ε*sin(E) - M)
     if M < π    # try to avoid potential bounding issues
@@ -445,26 +392,20 @@ function get_E_from_M( o :: Orbit
 
     val = abs(Optim.minimum(res))
     @assert(val < tol, "Solution appears to be incorrect!")
-    return Optim.minimizer(res)
+    return Optim.minimizer(res)u"rad"
 end
-
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
 
 """
 This function is especially useful for the creation of lightcurves and plots in terms of time
 """
 function get_ν_from_M( o :: Orbit
-                     , M :: Float64
-                     )   :: Float64
+                     , M :: typeof(1.0u"rad")
+                     )
     E = get_E_from_M(o,M)
     return get_ν_from_E(o,E)
 end
 
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
+
 
 """
 function get_time_btw_νs
@@ -480,9 +421,9 @@ Output
 https://en.wikipedia.org/wiki/True_anomaly
 """
 function get_time_btw_νs( s  :: Binary
-                        , ν1 :: Float64
-                        , ν2 :: Float64
-                        )    :: Float64
+                        , ν1 :: typeof(1.0u"rad")
+                        , ν2 :: typeof(1.0u"rad")
+                        )
     ea1 = get_E_from_ν(s.orb, ν1)
     ea2 = get_E_from_ν(s.orb, ν2)
     ma1 = get_M_from_E(s.orb, ea1)
@@ -495,9 +436,42 @@ function get_time_btw_νs( s  :: Binary
     return (ma2 - ma1)/n
 end
 
+
+
+"""
+function get_transit_duration_partial
+
+Input
+    s   -> Binary
+    ν_e -> true anomaly of mid eclipse
+"""
+
+function get_transit_duration_partial( s   :: Binary
+                                     , ν_e :: typeof(1.0u"rad")
+                                     )
+
+    ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
+
+    return get_time_btw_νs(s, ν₁, ν₄)
+end
 #---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
+
+"""
+function get_transit_duration_totann
+    s   -> Binary
+    ν_e -> true anomaly of mid eclipse
+"""
+
+function get_transit_duration_totann( s   :: Binary
+                                    , ν_e :: typeof(1.0u"rad")
+                                    )
+
+    ν₂,ν₃ = get_inner_critical_νs(s, ν_e)
+    if ν₃ < ν₂
+        ν₃ += 2π
+    end
+    return get_time_btw_νs(s, ν₂, ν₃)
+end
 
 """
 Area of circular sectors
@@ -540,22 +514,22 @@ For A_s₂, we swap r₁ with r₂ and x with (ρ - x)
 The following function returns
 A_s₁ + A_s₂
 """
-function area_of_overlap( ρ  :: Float64
-                        , r₁ :: Float64
-                        , r₂ :: Float64
-                        )    :: Float64
+function area_of_overlap( ρ  :: typeof(1.0u"Rsun")
+                        , r₁ :: typeof(1.0u"Rsun")
+                        , r₂ :: typeof(1.0u"Rsun")
+                        )
     @assert( abs(r₁ - r₂) < ρ < (r₁ + r₂)
            , string( "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)\n"
-                   , "\tr₁ = ", r₁, "\n"
-                   , "\tr₂ = ", r₂, "\n"
-                   , "\tρ = " , ρ , "\n"
+                   , "\tr₁ = $r₁\n"
+                   , "\tr₂ = $r₂\n"
+                   , "\tρ  = $ρ\n"
                    )
            )
-    x = (ρ^2 + r₁^2 - r₂^2)/(2⋅ρ)
+    x = (ρ^2 + r₁^2 - r₂^2)/(2*ρ)
     #println("x = ",x)
-    A_s₁ = (r₁^2)⋅acos(x/r₁) - x⋅√(r₁^2 - x^2)
+    A_s₁ = (r₁^2)*acos(x/r₁) - x*√(r₁^2 - x^2)
     #println("A_s₁ = ",A_s₁)
-    A_s₂ = (r₂^2)⋅acos((ρ-x)/r₂) - (ρ - x)⋅√(r₂^2 - (ρ - x)^2)
+    A_s₂ = (r₂^2)*acos((ρ-x)/r₂) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
     #println("A_s₂ = ",A_s₂)
     return A_s₁ + A_s₂
 end
@@ -571,56 +545,36 @@ Example:
 (1,0.75) means that the primary is fully visible while a quarter of the secondary is covered
 """
 function get_visible_frac( s :: Binary
-                         , ν :: Float64
+                         , ν :: typeof(1.0u"rad")
                          )   :: Tuple{Float64,Float64}
 
-    morph = eclipse_morphology_at_ν(s,ν)
-    #@show morph
+    morph = eclipse_morph_at_ν(s,ν)
 
-    #-----------------------------------------------------------------------------------------------
-    # no eclipse
-    if morph == 0
+    if morph == EclipseType(0)
         return (1,1)
     end
-    #-----------------------------------------------------------------------------------------------
 
     area1 = π*s.pri.r^2
     area2 = π*s.sec.r^2
 
-    χ,ψ,ζ = get_sky_pos(s.orb,ν)
-    ρ = √(χ^2 + ψ^2)    # get separation
-
-    if morph == 2   # total/annular eclipse
-        if ζ > 0    # secondary is in front
-            if ρ + s.sec.r < s.pri.r    # sep + sec radius is less than pri radius
-                # secondary is causing an annular eclipse on primary
-                frac = (area1 - area2)/area1
-                return (frac,1)
-            else
-                # secondary is totally eclipsing primary
-                return (0,1)
-            end
-        else    # primary is in front
-            if ρ + s.pri.r < s.sec.r    # sep + pri radius is less than sec radius
-                # primary is causing an annular eclipse on secondary
-                frac = (area2 - area1)/area2
-                return (1,frac)
-            else    # primary is totally eclipsing secondary
-                return (1,0)
-            end
-        end
-    elseif morph == 1    # partial eclipse
-        area_overlap = area_of_overlap(ρ, s.pri.r, s.sec.r)
-        if ζ > 0    # secondary is in front
-            frac = (area1 - area_overlap)/area1
-            return (frac,1)
-        else        # primary is in front
-            frac = (area2 - area_overlap)/area2
-            return (1,frac)
-        end
-    else
-        error("unrecognized morphology value")
+    if morph == EclipseType(2)      # primary is fully eclipsed by secondary
+        return (0,1)
+    elseif morph == EclipseType(3)  # primary is transited by secondary
+        return (1 - area2/area1, 1)
+    elseif morph == EclipseType(5)  # secondary is fully eclipsed by primary
+        return (1,0)
+    elseif morph == EclipseType(6)  # secondary is transited by primary
+        return (1, 1 - area1/area2)
     end
+
+    area_overlap = area_of_overlap(ρ, s.pri.r, s.sec.r)
+    if morph == EclipseType(1)      # primary is partially eclipsed by secondary
+        return (1 - area_overlap/area1, 1)
+    elseif morph == EclipseType(4)  # secondary is partially eclipsed by primary
+        return (1, 1 - area_overlap/area2)
+    end
+
+    error("Unrecognized morph value of $morph")
 end
 
 #"""

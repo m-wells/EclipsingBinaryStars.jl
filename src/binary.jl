@@ -77,7 +77,7 @@ function Base.show( io :: IO
     print( io
          , "   pri: ", v.pri, "\t"
          , "   sec: ", v.sec, "\n"
-         , v.orbit
+         , v.orb
          , " | p: ", v.p, "\n"
          )
 end
