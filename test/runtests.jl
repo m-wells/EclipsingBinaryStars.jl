@@ -27,10 +27,10 @@ using EclipsingBinaryStars
     
     @test νs[1] ≈ π/2 - fake_orb.ω
     @test νs[2] ≈ 3π/2 - fake_orb.ω
+    @test ms[1] == EclipseType(3)
     @show ms[1]
+    @test ms[2] == EclipseType(5)
     @show ms[2]
-    #@test ms[1] == EclipseType(2)
-    #@test ms[2] == EclipseType(2)
     
     #-----------------------------------------------------------------------------------------------
     fake_pri = Star(5.0u"Msun", 2.0u"Rsun")
@@ -45,10 +45,10 @@ using EclipsingBinaryStars
 
     @test νs[1] ≈ π/2 - fake_orb.ω
     @test νs[2] ≈ 3π/2 - fake_orb.ω
+    @test ms[1] == EclipseType(0)
     @show ms[1]
+    @test ms[2] == EclipseType(0)
     @show ms[2]
-    #@test ms[1] == EclipseType(0)
-    #@test ms[2] == EclipseType(0)
     
     #-----------------------------------------------------------------------------------------------
     fake_pri = Star(5.0u"Msun", 1.0u"Rsun")
@@ -63,10 +63,10 @@ using EclipsingBinaryStars
 
     @test νs[1] ≈ π/2 - fake_orb.ω
     @test νs[2] ≈ 3π/2 - fake_orb.ω
+    @test ms[1] == EclipseType(2)
     @show ms[1]
+    @test ms[2] == EclipseType(4)
     @show ms[2]
-    #@test ms[1] == 2
-    #@test ms[2] == 1
 
     #-----------------------------------------------------------------------------------------------
     fake_pri = Star(5.0u"Msun", 2.0u"Rsun")
@@ -81,7 +81,9 @@ using EclipsingBinaryStars
 
     @test νs[1] ≈ π/2 - fake_orb.ω
     @test νs[2] ≈ 3π/2 - fake_orb.ω
+    @test ms[1] == EclipseType(1)
     @show ms[1]
+    @test ms[2] == EclipseType(0)
     @show ms[2]
 
     #-----------------------------------------------------------------------------------------------
@@ -97,7 +99,9 @@ using EclipsingBinaryStars
 
     @test νs[1] ≈ π/2 - fake_orb.ω
     @test νs[2] ≈ 3π/2 - fake_orb.ω
+    @test ms[1] == EclipseType(2)
     @show ms[1]
+    @test ms[2] == EclipseType(6)
     @show ms[2]
 
 
