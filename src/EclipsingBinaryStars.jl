@@ -7,7 +7,7 @@
 module EclipsingBinaryStars
 
 export Star, Orbit, Binary, getBinary, eclipse_morph_at_ν, eclipse_morphs,
-    EclipseType
+    EclipseType, frac_visible_area
 
 using Unitful, UnitfulAstro
 

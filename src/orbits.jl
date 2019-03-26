@@ -83,17 +83,7 @@ function get_ρ( o :: Orbit
 end
 
 
-#---------------------------------------------------------------------------------------------------
-####################################################################################################
-#---------------------------------------------------------------------------------------------------
-function eclipse_morphs( s :: Binary
-                       )
-    # potential critical eclipse points
-    ν1 = 0.5π*u"rad" - s.orb.ω
-    ν2 = 1.5π*u"rad" - s.orb.ω
 
-    return (ν1,ν2),(eclipse_morph_at_ν(s,ν1), eclipse_morph_at_ν(s,ν2))
-end
 
 
 """
@@ -128,40 +118,41 @@ abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
 """
 function eclipse_morph_at_ν( s :: Binary
                            , ν :: typeof(1.0u"rad")
-                           )   :: EclipseType
+                           )   :: NamedTuple
 
     x,y,z = get_sky_pos(s.orb,ν)
     ρ = sqrt(x^2+y^2)
+    m = EclipseType(-1)
 
     if ρ >= s.pri.r + s.sec.r           # no eclipse case
-        return EclipseType(0)
+        m = EclipseType(0)
 
     elseif ρ > abs(s.pri.r - s.sec.r)   # partial case
         if z.val > 0                    # secondary is in front
-            return EclipseType(1)       #   primary is partially eclipsed
+            m = EclipseType(1)          #   primary is partially eclipsed
         else                            # primary is in front
-            return EclipseType(4)       #   secondary is partially eclipsed
+            m = EclipseType(4)          #   secondary is partially eclipsed
         end
 
     elseif ρ.val >= 0                   # total/annular cases
-        if s.pri.r > s.sec.r                # primary is larger
-            if z.val > 0                    #   secondary is in front
-                return EclipseType(3)       #       primary is transited
-            else                            #   primary is in front
-                return EclipseType(5)       #       secondary is fully eclipsed
+        if s.pri.r > s.sec.r            # primary is larger
+            if z.val > 0                #   secondary is in front
+                m = EclipseType(3)      #       primary is transited
+            else                        #   primary is in front
+                m = EclipseType(5)      #       secondary is fully eclipsed
             end
-        elseif s.pri.r < s.sec.r            # secondary is larger
-            if z.val > 0                    #   secondary is in front
-                return EclipseType(2)       #       primary is fully eclipsed
-            else                            #   primary is in front
-                return EclipseType(6)       #       secondary is transited
+        elseif s.pri.r < s.sec.r        # secondary is larger
+            if z.val > 0                #   secondary is in front
+                m = EclipseType(2)      #       primary is fully eclipsed
+            else                        #   primary is in front
+                m = EclipseType(6)      #       secondary is transited
             end
-        else                                # if primary and secondary are same size
-            if iszero(ρ.val)                #   need to be perfectly aligned (or it would be a partial eclipse)
-                if z.val > 0                #   secondary is in front
-                    return EclipseType(2)   #       primary is fully eclipsed
-                else                        #   primary is in front
-                    return EclipseType(5)   #       secondary is fully eclipsed
+        else                            # if primary and secondary are same size
+            if iszero(ρ.val)            #   need to be perfectly aligned (or it would be a partial eclipse)
+                if z.val > 0            #   secondary is in front
+                    m = EclipseType(2)  #       primary is fully eclipsed
+                else                    #   primary is in front
+                    m = EclipseType(5)  #       secondary is fully eclipsed
                 end
             else
                 error("To have a non-partial eclipse by equal size stars ρ needs to be 0 not $ρ")
@@ -170,6 +161,15 @@ function eclipse_morph_at_ν( s :: Binary
     else
         error("Unexpected value of ρ: $ρ")
     end
+    return (ν=ν, m=m, ρ=ρ)
+end
+
+function eclipse_morphs( s :: Binary
+                       )
+    # potential critical eclipse points
+    return ( eclipse_morph_at_ν(s,0.5π*u"rad" - s.orb.ω)
+           , eclipse_morph_at_ν(s,1.5π*u"rad" - s.orb.ω)
+           )
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -327,9 +327,9 @@ https://en.wikipedia.org/wiki/Eccentric_anomaly
 function get_E_from_ν( o :: Orbit
                      , ν :: typeof(1.0u"rad")
                      )
-    ea = atan2( √(1 - o.ε^2)*sin(ν)
-              , o.ε + cos(ν)
-              )
+    ea = atan( √(1 - o.ε^2)*sin(ν)
+             , o.ε + cos(ν)
+             )
     # test if ea should be cycled forward
     if (ν > 0) && (ea < 0)
         ea += 2π
@@ -346,9 +346,9 @@ https://en.wikipedia.org/wiki/Eccentric_anomaly
 function get_ν_from_E( o :: Orbit
                      , E :: typeof(1.0u"rad")
                      )
-    return 2⋅atan2( √(1 - o.ε)*cos(E/2)
-                  , √(1 + o.ε)*sin(E/2)
-                  )u"rad"
+    return 2⋅atan( √(1 - o.ε)*cos(E/2)
+                 , √(1 + o.ε)*sin(E/2)
+                 )u"rad"
 end
 
 """
@@ -421,19 +421,22 @@ Output
 https://en.wikipedia.org/wiki/True_anomaly
 """
 function get_time_btw_νs( s  :: Binary
-                        , ν1 :: typeof(1.0u"rad")
-                        , ν2 :: typeof(1.0u"rad")
+                        , ν₁ :: typeof(1.0u"rad")
+                        , ν₂ :: typeof(1.0u"rad")
                         )
-    ea1 = get_E_from_ν(s.orb, ν1)
-    ea2 = get_E_from_ν(s.orb, ν2)
-    ma1 = get_M_from_E(s.orb, ea1)
-    ma2 = get_M_from_E(s.orb, ea2)
+    if ν₁ > ν₂
+        ν₂ += 2π*u"rad"
+    end
+    ea₁ = get_E_from_ν(s.orb, ν₁)
+    ea₂ = get_E_from_ν(s.orb, ν₂)
+    ma₁ = get_M_from_E(s.orb, ea₁)
+    ma₂ = get_M_from_E(s.orb, ea₂)
     #@show ea1
     #@show ea2
     #@show ma1
     #@show ma2
-    n = 2pi/s.P
-    return (ma2 - ma1)/n
+    n = 2π*u"rad"/s.p
+    return (ma₂ - ma₁)/n
 end
 
 
@@ -544,37 +547,37 @@ Return a tuple indicating the visible fraction of each star at ν
 Example:
 (1,0.75) means that the primary is fully visible while a quarter of the secondary is covered
 """
-function get_visible_frac( s :: Binary
-                         , ν :: typeof(1.0u"rad")
-                         )   :: Tuple{Float64,Float64}
+function frac_visible_area( s :: Binary
+                          , ν :: typeof(1.0u"rad")
+                          )   :: Tuple{Float64,Float64}
 
-    morph = eclipse_morph_at_ν(s,ν)
+    pnt = eclipse_morph_at_ν(s,ν)
 
-    if morph == EclipseType(0)
+    if pnt.m == EclipseType(0)
         return (1,1)
     end
 
     area1 = π*s.pri.r^2
     area2 = π*s.sec.r^2
 
-    if morph == EclipseType(2)      # primary is fully eclipsed by secondary
+    if pnt.m == EclipseType(2)      # primary is fully eclipsed by secondary
         return (0,1)
-    elseif morph == EclipseType(3)  # primary is transited by secondary
+    elseif pnt.m == EclipseType(3)  # primary is transited by secondary
         return (1 - area2/area1, 1)
-    elseif morph == EclipseType(5)  # secondary is fully eclipsed by primary
+    elseif pnt.m == EclipseType(5)  # secondary is fully eclipsed by primary
         return (1,0)
-    elseif morph == EclipseType(6)  # secondary is transited by primary
+    elseif pnt.m == EclipseType(6)  # secondary is transited by primary
         return (1, 1 - area1/area2)
     end
 
-    area_overlap = area_of_overlap(ρ, s.pri.r, s.sec.r)
-    if morph == EclipseType(1)      # primary is partially eclipsed by secondary
+    area_overlap = area_of_overlap(pnt.ρ, s.pri.r, s.sec.r)
+    if pnt.m == EclipseType(1)      # primary is partially eclipsed by secondary
         return (1 - area_overlap/area1, 1)
-    elseif morph == EclipseType(4)  # secondary is partially eclipsed by primary
+    elseif pnt.m == EclipseType(4)  # secondary is partially eclipsed by primary
         return (1, 1 - area_overlap/area2)
     end
 
-    error("Unrecognized morph value of $morph")
+    error("Unrecognized morph value of $(pnt.m)")
 end
 
 #"""
