@@ -12,7 +12,7 @@ export Star, Orbit, Binary, getBinary, eclipse_morph_at_ν, eclipse_morphs,
 import Unitful: °, rad
 using Unitful, UnitfulAstro
 
-const Angle = Union{typeof(1rad),typeof(1.0rad),typeof(1°),typeof(1.0°)}
+const Angle{T} = Quantity{T, NoDims, typeof(u"rad")}
 
 include("star.jl")
 include("orbit.jl")

@@ -35,7 +35,7 @@ function getBinary( pri :: Star
                   , i   :: Angle
                   , ω   :: Angle
                   )
-    orb = Orbit( kep3rd_get_semimajor(pri,sec,p)
+    orb = Orbit( kep3rd_get_semimajor(pri.m,sec.m,p)
                , ε , i , ω
                )
     return Binary( pri , sec , orb , p
@@ -51,7 +51,7 @@ function getBinary( pri :: Star
                   , orb :: Orbit
                   )     :: Binary
     return Binary( pri , sec , orb
-                 , kep3rd_get_period(pri,sec,orb.a)
+                 , kep3rd_get_period(pri.m,sec.m,orb.a)
                  , get_roche(pri, sec, orb)
                  )
 end

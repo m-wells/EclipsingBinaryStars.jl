@@ -149,21 +149,36 @@ end
     #   intermediate periods (Section 9.1; Figure 35), early-type binaries with P ≲ 16 yr, i.e.,
     #   logP (days) ≲ 3.8, undergo RLOF.
     pri = Star(1u"Msun", 250u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
+    sec = Star(0.7u"Msun", 0.7u"Rsun")
     ε = 0.5
     orb = Orbit( 2.2*pri.r/(1 - ε)
                , ε, 0rad, 0rad
                )
     binary = getBinary(pri, sec, orb)
+    println("primary = ", binary.pri)
+    println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
+    println("RLOF = ", binary.roche.rlof₁)
     @test binary.roche.rlof₁ == true
+    println("secondary = ", binary.sec)
+    println("(r₂/a)*a = ",binary.roche.r₂_a*binary.orb.a*(1 - binary.orb.ε))
+    println("RLOF = ", binary.roche.rlof₂)
     @test binary.roche.rlof₂ == false
 
+    println()
     pri = Star(20u"Msun", 1050u"Rsun")
     sec = Star(5u"Msun", 3u"Rsun")
     #p = uconvert(u"d", 16u"yr")
     p = 16u"yr"
     binary = getBinary(pri, sec, p, ε, 0rad, 0rad)
+    println("primary = ", binary.pri)
+    println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
+    println("RLOF = ", binary.roche.rlof₁)
     @test binary.roche.rlof₁ == true
+
+    println("secondary = ", binary.sec)
+    println("R₂ = ", binary.sec.r)
+    println("(r₂/a)*a = ",binary.roche.r₂_a*binary.orb.a*(1 - binary.orb.ε))
+    println("RLOF = ", binary.roche.rlof₂)
     @test binary.roche.rlof₂ == false
 end
 
