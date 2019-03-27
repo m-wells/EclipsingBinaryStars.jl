@@ -9,20 +9,14 @@ struct Binary
     pri :: Star
     sec :: Star
     orb :: Orbit
-    p :: typeof(1.0u"d")
+    P :: typeof(1.0u"d")
     roche :: Roche
 end
 
 function Base.show( io :: IO
                   , v  :: Binary
                   )
-    print( io , "\n"
-         , "\t pri: ", v.pri, "\n"
-         , "\t sec: ", v.sec, "\n"
-         , "\t orb: ", v.orb, "\n"
-         , "\t p: ", v.p, "\n"
-         , "\t roche:", v.roche
-         )
+    print(io, (pri = v.pri, sec = v.sec, orb = v.orb, P = short(v.P), roche = v.roche))
 end
 
 """
@@ -30,15 +24,15 @@ create Binary given primary, secondary, period (Days), eccn, inclination, arg. o
 """
 function getBinary( pri :: Star
                   , sec :: Star
-                  , p   :: Unitful.Time
+                  , P   :: Unitful.Time
                   , ε   :: Float64
                   , i   :: Angle
                   , ω   :: Angle
                   )
-    orb = Orbit( kep3rd_get_semimajor(pri.m,sec.m,p)
+    orb = Orbit( kep3rd_get_semimajor(pri.m,sec.m,P)
                , ε , i , ω
                )
-    return Binary( pri , sec , orb , p
+    return Binary( pri , sec , orb , P
                  , get_roche(pri, sec, orb)
                  )
 end

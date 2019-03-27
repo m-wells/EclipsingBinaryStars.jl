@@ -14,6 +14,13 @@ using Unitful, UnitfulAstro
 
 const Angle{T} = Quantity{T, NoDims, typeof(u"rad")}
 
+
+short(x::Quantity) = short(x.val)unit(x)
+function short(x::T) where T
+    return parse(T, sprint(show, x; context=:compact => true))
+end
+
+
 include("star.jl")
 include("orbit.jl")
 include("roche.jl")

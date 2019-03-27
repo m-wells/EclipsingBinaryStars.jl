@@ -8,7 +8,19 @@
 using Test
 using Unitful, UnitfulAstro
 import Unitful: °, rad
+
+#push!(LOAD_PATH, "../src/")
 using EclipsingBinaryStars
+
+#pri = Star(5u"Msun", 2u"Rsun")
+#sec = Star(1u"Msun", 1u"Rsun")
+#a = 20.0u"Rsun"
+#ε = 0.5
+#i = deg2rad(90)*u"rad"
+#ω = (pi/3)*u"rad"
+#orb = Orbit(a, ε, i, ω)
+#binary = getBinary(pri, sec, orb)
+#pnt₁,pnt₂ = eclipse_morphs(binary)
 
 @testset "eclipse morphology testing" begin
     pri = Star(5u"Msun", 2u"Rsun")
@@ -24,9 +36,9 @@ using EclipsingBinaryStars
     @test pnt₁.ν ≈ π/2 - orb.ω
     @test pnt₂.ν ≈ 3π/2 - orb.ω
     @test pnt₁.m == EclipseType(3)
-    @show pnt₁.m
+    #@show pnt₁.m
     @test pnt₂.m == EclipseType(5)
-    @show pnt₂.m
+    #@show pnt₂.m
     
     pri = Star(5u"Msun", 2u"Rsun")
     sec = Star(1u"Msun", 1u"Rsun")
@@ -41,9 +53,9 @@ using EclipsingBinaryStars
     @test pnt₁.ν ≈ π/2 - orb.ω
     @test pnt₂.ν ≈ 3π/2 - orb.ω
     @test pnt₁.m == EclipseType(0)
-    @show pnt₁.m
+    #@show pnt₁.m
     @test pnt₂.m == EclipseType(0)
-    @show pnt₂.m
+    #@show pnt₂.m
     
     pri = Star(5u"Msun", 1u"Rsun")
     sec = Star(1u"Msun", 2u"Rsun")
@@ -58,9 +70,9 @@ using EclipsingBinaryStars
     @test pnt₁.ν ≈ π/2 - orb.ω
     @test pnt₂.ν ≈ 3π/2 - orb.ω
     @test pnt₁.m == EclipseType(2)
-    @show pnt₁.m
+    #@show pnt₁.m
     @test pnt₂.m == EclipseType(4)
-    @show pnt₂.m
+    #@show pnt₂.m
 
     pri = Star(5u"Msun", 2u"Rsun")
     sec = Star(1u"Msun", 1u"Rsun")
@@ -75,9 +87,9 @@ using EclipsingBinaryStars
     @test pnt₁.ν ≈ π/2 - orb.ω
     @test pnt₂.ν ≈ 3π/2 - orb.ω
     @test pnt₁.m == EclipseType(1)
-    @show pnt₁.m
+    #@show pnt₁.m
     @test pnt₂.m == EclipseType(0)
-    @show pnt₂.m
+    #@show pnt₂.m
 
     pri = Star(5u"Msun", 1u"Rsun")
     sec = Star(1u"Msun", 2u"Rsun")
@@ -92,9 +104,9 @@ using EclipsingBinaryStars
     @test pnt₁.ν ≈ π/2 - orb.ω
     @test pnt₂.ν ≈ 3π/2 - orb.ω
     @test pnt₁.m == EclipseType(2)
-    @show pnt₁.m
+    #@show pnt₁.m
     @test pnt₂.m == EclipseType(6)
-    @show pnt₂.m
+    #@show pnt₂.m
 end
 
 @testset "transit duration testing" begin
@@ -155,13 +167,13 @@ end
                , ε, 0rad, 0rad
                )
     binary = getBinary(pri, sec, orb)
-    println("primary = ", binary.pri)
-    println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
-    println("RLOF = ", binary.roche.rlof₁)
+    #println("primary = ", binary.pri)
+    #println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
+    #println("RLOF = ", binary.roche.rlof₁)
     @test binary.roche.rlof₁ == true
-    println("secondary = ", binary.sec)
-    println("(r₂/a)*a = ",binary.roche.r₂_a*binary.orb.a*(1 - binary.orb.ε))
-    println("RLOF = ", binary.roche.rlof₂)
+    #println("secondary = ", binary.sec)
+    #println("(r₂/a)*a = ",binary.roche.r₂_a*binary.orb.a*(1 - binary.orb.ε))
+    #println("RLOF = ", binary.roche.rlof₂)
     @test binary.roche.rlof₂ == false
 
     println()
@@ -170,15 +182,14 @@ end
     #p = uconvert(u"d", 16u"yr")
     p = 16u"yr"
     binary = getBinary(pri, sec, p, ε, 0rad, 0rad)
-    println("primary = ", binary.pri)
-    println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
-    println("RLOF = ", binary.roche.rlof₁)
+    #println("primary = ", binary.pri)
+    #println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
+    #println("RLOF = ", binary.roche.rlof₁)
     @test binary.roche.rlof₁ == true
 
-    println("secondary = ", binary.sec)
-    println("R₂ = ", binary.sec.r)
-    println("(r₂/a)*a = ",binary.roche.r₂_a*binary.orb.a*(1 - binary.orb.ε))
-    println("RLOF = ", binary.roche.rlof₂)
+    #println("secondary = ", binary.sec)
+    #println("(r₂/a)*a = ",binary.roche.r₂_a*binary.orb.a*(1 - binary.orb.ε))
+    #println("RLOF = ", binary.roche.rlof₂)
     @test binary.roche.rlof₂ == false
 end
 
@@ -213,7 +224,7 @@ end
         end
     end
 end
-
+#
 @testset "critical_νs" begin
     pri = Star(5u"Msun", 2u"Rsun")
     sec = Star(1u"Msun", 1u"Rsun")
@@ -240,12 +251,12 @@ end
                         if m != EclipseType(0)
                             νs_c = EclipsingBinaryStars.get_outer_critical_νs(binary, ν_e)
                             eclip_time = get_time_btw_νs(binary, νs_c[1], νs_c[2])
-                            @test eclip_time < binary.p
+                            @test eclip_time < binary.P
                         end
                         if m in [EclipseType(2),EclipseType(3),EclipseType(5),EclipseType(6)]
                             νs_c = EclipsingBinaryStars.get_inner_critical_νs(binary, ν_e)
                             eclip_time = get_time_btw_νs(binary, νs_c[1], νs_c[2])
-                            @test eclip_time < binary.p
+                            @test eclip_time < binary.P
                         end
                     end
                 end

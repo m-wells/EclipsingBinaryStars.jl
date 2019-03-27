@@ -17,8 +17,5 @@ end
 function Base.show( io :: IO
                   , v  :: Star
                   )
-    print( io
-         , "\t m: ", v.m
-         , " | r: ", v.r
-         )
+    print( io, (short(v.m), short(v.r)))
 end

@@ -26,11 +26,9 @@ end
 function Base.show( io :: IO
                   , v  :: Roche
                   )
-    print( io
-         , "\t r₁_a:" , v.r₁_a
-         , " | rlof₁:" , v.rlof₁
-         , " | r₂_a:" , v.r₂_a
-         , " | rlof₂:" , v.rlof₂
+    print(io, ( r₁_a = short(v.r₁_a) , rlof₁ = v.rlof₁
+              , r₂_a = short(v.r₂_a) , rlof₂ = v.rlof₂
+              )
          )
 end
 
