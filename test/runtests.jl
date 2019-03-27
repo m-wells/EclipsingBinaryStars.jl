@@ -8,7 +8,6 @@
 using Test
 using Unitful, UnitfulAstro
 import Unitful: °, rad
-push!(LOAD_PATH,"../src")
 using EclipsingBinaryStars
 
 @testset "eclipse morphology testing" begin

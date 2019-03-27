@@ -42,13 +42,14 @@ r₂/a = roche_radius(M₂/M₁)
 function get_roche( pri :: Star
                   , sec :: Star
                   , orb :: Orbit
+                  ; fill_factor :: Number = 0.7
                   )
     # the roche radii is smallest at periastron
     r₁_a = roche_radius(pri.m, sec.m)
     r₂_a = roche_radius(sec.m, pri.m)
 
     a_peri = orb.a*(1-orb.ε)
-    return Roche( r₁_a , pri.r > (r₁_a * a_peri)
-                , r₂_a , sec.r > (r₂_a * a_peri)
+    return Roche( r₁_a , pri.r > fill_factor*(r₁_a * a_peri)
+                , r₂_a , sec.r > fill_factor*(r₂_a * a_peri)
                 )
 end
