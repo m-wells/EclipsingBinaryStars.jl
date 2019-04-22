@@ -425,15 +425,13 @@ function get_time_btw_νs( b  :: Binary
                         , ν₁ :: AngleRad
                         , ν₂ :: AngleRad
                         )    :: typeof(1.0d)
-    if ν₂ - ν₁ < 0rad
-        ν₂ += 2π*rad
-    end
+
     ea₁ = get_E_from_ν(b.orb, ν₁)
     ea₂ = get_E_from_ν(b.orb, ν₂)
     ma₁ = get_M_from_E(b.orb, ea₁)
     ma₂ = get_M_from_E(b.orb, ea₂)
     n = 2π*rad/b.P
-    return (ma₂ - ma₁)/n
+    return abs(ma₂ - ma₁)/n
 end
 
 """
