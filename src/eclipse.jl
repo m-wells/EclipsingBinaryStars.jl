@@ -519,8 +519,8 @@ function area_of_overlap( ρ  :: Unitful.Length
                    )
            )
     x = (ρ^2 + r₁^2 - r₂^2)/(2*ρ)
-    A_s₁ = (r₁^2)*u.acos(x/r₁) - x*√(r₁^2 - x^2)
-    A_s₂ = (r₂^2)*u.acos((ρ-x)/r₂) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
+    A_s₁ = (r₁^2)*ustrip(rad,u.acos(x/r₁)) - x*√(r₁^2 - x^2)
+    A_s₂ = (r₂^2)*ustrip(rad,u.acos((ρ-x)/r₂)) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
     return A_s₁ + A_s₂
 end
 
