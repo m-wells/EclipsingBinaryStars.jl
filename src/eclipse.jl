@@ -325,31 +325,36 @@ end
 
 """
 https://en.wikipedia.org/wiki/Eccentric_anomaly
+Eccentric anomaly (E) from True anomaly (ν)
+    tan(E) = √(1-ε²) sin(ν) / (ε + cos(ν))
+    E = atan(y/x)
+where:
+    y = √(1-ε²) sin(ν)
+    x = ε + cos(ν)
+so:
+    E = atan2(y,x)
 """
 function get_E_from_ν( o :: Orbit
                      , ν :: AngleRad
                      )   :: typeof(1.0rad)
-    ea = u.atan( √(1 - o.ε^2)*sin(ν)
-             , o.ε + cos(ν)
-             )
-    # test if ea should be cycled forward
-    if (ν > 0rad) && (ea < 0rad)
-        ea += (2π)rad
-    end
-    if (ν > (3π/2)rad) && (ea < (π/2)rad)
-        ea += (2π)rad
-    end
-    return ea
+    return u.atan( √(1 - o.ε^2)*sin(ν)
+                 , o.ε + cos(ν)
+                 )
 end
 
 """
-https://en.wikipedia.org/wiki/Eccentric_anomaly
+https://en.wikipedia.org/wiki/True_anomaly
+True anomaly (ν) from Eccentric anomaly (E)
+    ν = 2 arg(√(1-ε) cos(E/2), √(1+ε) sin(E/2))
+where
+    arg(x,y) = is the polar argument of the vector
+    atan2(y,x) = arg(x,y) [Note: the swapping of x and y]
 """
 function get_ν_from_E( o :: Orbit
                      , E :: Angle
                      )   :: typeof(1.0rad)
-    return 2u.atan( √(1 - o.ε)*cos(E/2)
-                  , √(1 + o.ε)*sin(E/2)
+    return 2u.atan( √(1 + o.ε)*sin(E/2)
+                  , √(1 - o.ε)*cos(E/2)
                   )
 end
 
