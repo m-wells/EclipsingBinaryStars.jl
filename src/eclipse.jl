@@ -329,7 +329,7 @@ https://en.wikipedia.org/wiki/Eccentric_anomaly
 function get_E_from_ν( o :: Orbit
                      , ν :: AngleRad
                      )   :: typeof(1.0rad)
-    ea = atan( √(1 - o.ε^2)*sin(ν)
+    ea = u.atan( √(1 - o.ε^2)*sin(ν)
              , o.ε + cos(ν)
              )
     # test if ea should be cycled forward
@@ -348,9 +348,9 @@ https://en.wikipedia.org/wiki/Eccentric_anomaly
 function get_ν_from_E( o :: Orbit
                      , E :: Angle
                      )   :: typeof(1.0rad)
-    return 2⋅atan( √(1 - o.ε)*cos(E/2)
-                 , √(1 + o.ε)*sin(E/2)
-                 )rad
+    return 2u.atan( √(1 - o.ε)*cos(E/2)
+                  , √(1 + o.ε)*sin(E/2)
+                  )
 end
 
 """
@@ -381,7 +381,7 @@ function get_E_from_M( o :: Orbit
                      )   :: typeof(1.0rad)
 
 
-    f(E) = abs(E - o.ε*sin(E) - M)
+    f(E) = abs(E - o.ε*sin(E) - M.val)
     if M < (π)rad   # try to avoid potential bounding issues
         res = optimize(f, -π/6, 7π/6, Brent())
     else
@@ -417,8 +417,8 @@ Output
 https://en.wikipedia.org/wiki/True_anomaly
 """
 function get_time_btw_νs( b  :: Binary
-                        , ν₁ :: Angle
-                        , ν₂ :: Angle
+                        , ν₁ :: AngleRad
+                        , ν₂ :: AngleRad
                         )    :: typeof(1.0d)
     if ν₁ > ν₂
         ν₂ += 2π*rad
@@ -482,12 +482,12 @@ which yields
 
 The area of sector 1, A_s₁, is the area of the wedge, A_w₁, with angle θ₁ and r₁ minus the area of
 the triangle, A_t₁, with points (0,0),(x,y),(x,-y). First we solve for θ₁
-    θ₁/2 = acos(x/r₁)
-    θ₁ = 2⋅acos(x/r₁)
+    θ₁/2 = u.acos(x/r₁)
+    θ₁ = 2⋅u.acos(x/r₁)
 which allows for the calculation of A_w₁
     A_w₁ = (θ₁/2)⋅r₁²
-    A_w₁ = (2⋅acos(x/r₁)/2)⋅r₁²
-    A_w₁ = r₁²⋅acos(x/r₁)
+    A_w₁ = (2⋅u.acos(x/r₁)/2)⋅r₁²
+    A_w₁ = r₁²⋅u.acos(x/r₁)
 A_t₁ is
     A_t₁ = 2⋅(¹/₂)⋅x⋅y
     A_t₁ = x⋅y
@@ -496,10 +496,10 @@ where
 
 Finally we get
     A_s₁ = A_w₁ - A_t₁
-         = r₁²⋅acos(x/r₁) - x⋅√(r₁² - x²)
+         = r₁²⋅u.acos(x/r₁) - x⋅√(r₁² - x²)
 For A_s₂, we swap r₁ with r₂ and x with (ρ - x)
     A_s₂ = A_w₂ - A_t₂
-         = r₂²⋅acos((ρ-x)/r₂) - (ρ - x)⋅√(r₂² - (ρ - x)²)
+         = r₂²⋅u.acos((ρ-x)/r₂) - (ρ - x)⋅√(r₂² - (ρ - x)²)
 
 The following function returns
 A_s₁ + A_s₂
@@ -516,8 +516,8 @@ function area_of_overlap( ρ  :: Unitful.Length
                    )
            )
     x = (ρ^2 + r₁^2 - r₂^2)/(2*ρ)
-    A_s₁ = (r₁^2)*acos(x/r₁) - x*√(r₁^2 - x^2)
-    A_s₂ = (r₂^2)*acos((ρ-x)/r₂) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
+    A_s₁ = (r₁^2)*u.acos(x/r₁) - x*√(r₁^2 - x^2)
+    A_s₂ = (r₂^2)*u.acos((ρ-x)/r₂) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
     return A_s₁ + A_s₂
 end
 

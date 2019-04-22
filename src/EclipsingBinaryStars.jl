@@ -13,6 +13,8 @@ using Unitful
 using UnitfulAstro: Msun, Rsun, AU, GMsun
 import Unitful: d, rad, °, Mass, Time, Length, Angle
 
+const u = Unitful
+
 include("defunits.jl")
 include("star.jl")
 include("orbit.jl")
