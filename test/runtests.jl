@@ -7,7 +7,7 @@
 
 using Test
 using Unitful
-import UnitfulAstro: Msun, Rsun, AU
+using UnitfulAstro: Msun, Rsun, AU
 import Unitful: d, rad, °, Mass, Time, Length, Angle
 
 #push!(LOAD_PATH, "../src/")

@@ -10,7 +10,7 @@ export Star, Orbit, Binary, getBinary, eclipse_morph_at_ν, eclipse_morphs,
     EclipseType, frac_visible_area, undergo_rlof, get_time_btw_νs
 
 using Unitful
-import UnitfulAstro: Msun, Rsun, AU
+using UnitfulAstro: Msun, Rsun, AU
 import Unitful: d, rad, °, Mass, Time, Length, Angle
 
 include("defunits.jl")
