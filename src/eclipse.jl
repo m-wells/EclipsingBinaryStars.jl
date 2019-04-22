@@ -327,19 +327,19 @@ end
 https://en.wikipedia.org/wiki/Eccentric_anomaly
 """
 function get_E_from_ν( o :: Orbit
-                     , ν :: Angle
+                     , ν :: AngleRad
                      )   :: typeof(1.0rad)
     ea = atan( √(1 - o.ε^2)*sin(ν)
              , o.ε + cos(ν)
              )
     # test if ea should be cycled forward
-    if (ν > 0) && (ea < 0)
-        ea += 2π
+    if (ν > 0rad) && (ea < 0rad)
+        ea += (2π)rad
     end
-    if (ν > 3π/2) && (ea < π/2)
-        ea += 2π
+    if (ν > (3π/2)rad) && (ea < (π/2)rad)
+        ea += (2π)rad
     end
-    return ea*rad
+    return ea
 end
 
 """
@@ -376,13 +376,13 @@ end
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
 function get_E_from_M( o :: Orbit
-                     , M :: Angle
+                     , M :: AngleRad
                      ; tol = 0.001
                      )   :: typeof(1.0rad)
 
 
     f(E) = abs(E - o.ε*sin(E) - M)
-    if M < π    # try to avoid potential bounding issues
+    if M < (π)rad   # try to avoid potential bounding issues
         res = optimize(f, -π/6, 7π/6, Brent())
     else
         res = optimize(f, 5π/6, 13π/6, Brent())
@@ -458,7 +458,7 @@ function get_transit_duration_totann( s   :: Binary
 
     ν₂,ν₃ = get_inner_critical_νs(s, ν_e)
     if ν₃ < ν₂
-        ν₃ += 2π
+        ν₃ += (2π)rad
     end
     return get_time_btw_νs(s, ν₂, ν₃)
 end
