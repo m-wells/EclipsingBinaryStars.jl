@@ -227,9 +227,11 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[Unitful]]
 deps = ["LinearAlgebra", "Random", "Test"]
-git-tree-sha1 = "94736a38908c6b43d22e1abffc4f72ab19dabbc1"
+git-tree-sha1 = "032544f0497a3dc466ac258b6193f0293b5e8ebe"
+repo-rev = "master"
+repo-url = "git@github.com:m-wells/Unitful.jl.git"
 uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
-version = "0.15.0"
+version = "0.15.0+"
 
 [[UnitfulAngles]]
 deps = ["Dates", "Test", "Unitful"]
