@@ -7,29 +7,29 @@
 
 using Test
 using Unitful
-using UnitfulAstro: Msun, Rsun, AU
-import Unitful: d, rad, °, Mass, Time, Length, Angle
+using UnitfulAstro: Msun, Rsun, AU, GMsun
+import Unitful: d, yr, rad, °, Mass, Time, Length, Angle
 
 #push!(LOAD_PATH, "../src/")
 using EclipsingBinaryStars
 
-#pri = Star(5u"Msun", 2u"Rsun")
-#sec = Star(1u"Msun", 1u"Rsun")
-#a = 20.0u"Rsun"
+#pri = Star(5Msun, 2Rsun)
+#sec = Star(1Msun, 1Rsun)
+#a = 20.0Rsun
 #ε = 0.5
-#i = deg2rad(90)*u"rad"
-#ω = (pi/3)*u"rad"
+#i = deg2rad(90)*rad
+#ω = (pi/3)*rad
 #orb = Orbit(a, ε, i, ω)
 #binary = getBinary(pri, sec, orb)
 #pnt₁,pnt₂ = eclipse_morphs(binary)
 
 @testset "eclipse morphology testing" begin
-    pri = Star(5u"Msun", 2u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
-    a = 20.0u"Rsun"
+    pri = Star(5Msun, 2Rsun)
+    sec = Star(1Msun, 1Rsun)
+    a = 20.0Rsun
     ε = 0.5
-    i = deg2rad(90)*u"rad"
-    ω = (pi/3)*u"rad"
+    i = deg2rad(90)*rad
+    ω = (pi/3)*rad
     orb = Orbit(a, ε, i, ω)
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
@@ -41,12 +41,12 @@ using EclipsingBinaryStars
     @test pnt₂.m == EclipseType(5)
     #@show pnt₂.m
     
-    pri = Star(5u"Msun", 2u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
-    a = 20.0u"Rsun"
+    pri = Star(5Msun, 2Rsun)
+    sec = Star(1Msun, 1Rsun)
+    a = 20.0Rsun
     ε = 0.5
-    i = deg2rad(0)*u"rad"
-    ω = (pi/3)*u"rad"
+    i = deg2rad(0)*rad
+    ω = (pi/3)*rad
     orb = Orbit(a, ε, i, ω)
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
@@ -58,12 +58,12 @@ using EclipsingBinaryStars
     @test pnt₂.m == EclipseType(0)
     #@show pnt₂.m
     
-    pri = Star(5u"Msun", 1u"Rsun")
-    sec = Star(1u"Msun", 2u"Rsun")
-    a = 20.0u"Rsun"
+    pri = Star(5Msun, 1Rsun)
+    sec = Star(1Msun, 2Rsun)
+    a = 20.0Rsun
     ε = 0.5
-    i = deg2rad(87)*u"rad"
-    ω = (pi/6)*u"rad"
+    i = deg2rad(87)*rad
+    ω = (pi/6)*rad
     orb = Orbit(a, ε, i, ω)
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
@@ -75,12 +75,12 @@ using EclipsingBinaryStars
     @test pnt₂.m == EclipseType(4)
     #@show pnt₂.m
 
-    pri = Star(5u"Msun", 2u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
-    a = 20.0u"Rsun"
+    pri = Star(5Msun, 2Rsun)
+    sec = Star(1Msun, 1Rsun)
+    a = 20.0Rsun
     ε = 0.5
-    i = deg2rad(80)*u"rad"
-    ω = (pi/3)*u"rad"
+    i = deg2rad(80)*rad
+    ω = (pi/3)*rad
     orb = Orbit(a, ε, i, ω)
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
@@ -92,12 +92,12 @@ using EclipsingBinaryStars
     @test pnt₂.m == EclipseType(0)
     #@show pnt₂.m
 
-    pri = Star(5u"Msun", 1u"Rsun")
-    sec = Star(1u"Msun", 2u"Rsun")
-    a = 20.0u"Rsun"
+    pri = Star(5Msun, 1Rsun)
+    sec = Star(1Msun, 2Rsun)
+    a = 20.0Rsun
     ε = 0.5
-    i = deg2rad(90)*u"rad"
-    ω = (pi/3)*u"rad"
+    i = deg2rad(90)*rad
+    ω = (pi/3)*rad
     orb = Orbit(a, ε, i, ω)
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
@@ -111,12 +111,12 @@ using EclipsingBinaryStars
 end
 
 @testset "transit duration testing" begin
-    pri = Star(5u"Msun", 2u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
+    pri = Star(5Msun, 2Rsun)
+    sec = Star(1Msun, 1Rsun)
 
     for ω in (0:π/3:2π)rad
         for ε in 0:0.1:1-eps()
-            a = 20u"Rsun"
+            a = 20Rsun
             i = deg2rad(90)rad
             orb = Orbit(a,ε,i,ω)
             binary = getBinary(pri, sec, orb)
@@ -161,8 +161,8 @@ end
     #   Assuming M₁ = 20Msun and the average mass ratio ⟨q⟩ = 0.3 of massive binaries with
     #   intermediate periods (Section 9.1; Figure 35), early-type binaries with P ≲ 16 yr, i.e.,
     #   logP (days) ≲ 3.8, undergo RLOF.
-    pri = Star(1u"Msun", 250u"Rsun")
-    sec = Star(0.7u"Msun", 0.7u"Rsun")
+    pri = Star(1Msun, 250Rsun)
+    sec = Star(0.7Msun, 0.7Rsun)
     ε = 0.5
     orb = Orbit( 2.2*pri.r/(1 - ε)
                , ε, 0rad, 0rad
@@ -178,10 +178,10 @@ end
     @test binary.roche.rlof₂ == false
 
     println()
-    pri = Star(20u"Msun", 1050u"Rsun")
-    sec = Star(5u"Msun", 3u"Rsun")
-    #p = uconvert(u"d", 16u"yr")
-    p = 16u"yr"
+    pri = Star(20Msun, 1050Rsun)
+    sec = Star(5Msun, 3Rsun)
+    #p = uconvert(d, 16yr)
+    p = 16yr
     binary = getBinary(pri, sec, p, ε, 0rad, 0rad)
     #println("primary = ", binary.pri)
     #println("(r₁/a)*a = ",binary.roche.r₁_a*binary.orb.a*(1 - binary.orb.ε))
@@ -195,8 +195,8 @@ end
 end
 
 @testset "visible_frac_exhaustive" begin
-    pri = Star(5u"Msun", 2u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
+    pri = Star(5Msun, 2Rsun)
+    sec = Star(1Msun, 1Rsun)
     
     a_range = [3.0, 30.0, 300.0, 3000.0, 30000.0]
     
@@ -205,10 +205,10 @@ end
             for i in 0:π/10:π/2
                 for ε in 0:0.1:1-eps()
                     for a in a_range
-                        orb = Orbit(a*u"Rsun", ε, i*u"rad", ω*u"rad")
+                        orb = Orbit(a*Rsun, ε, i*rad, ω*rad)
                         binary = getBinary(pri, sec, orb)
                         
-                        fracs = frac_visible_area(binary, ν*u"rad")
+                        fracs = frac_visible_area(binary, ν*rad)
                         # they can't both be eclipsed at the same time
                         @test any(fracs .== 1)
                         # fractions cannot be less than 0
@@ -227,10 +227,10 @@ end
 end
 #
 @testset "critical_νs" begin
-    pri = Star(5u"Msun", 2u"Rsun")
-    sec = Star(1u"Msun", 1u"Rsun")
+    pri = Star(5Msun, 2Rsun)
+    sec = Star(1Msun, 1Rsun)
     
-    a_range = [3.0, 30.0, 300.0, 3000.0, 30000.0]*u"Rsun"
+    a_range = [3.0, 30.0, 300.0, 3000.0, 30000.0]*Rsun
     
     ωs = collect(0:π/3:2π)*rad
     is = collect(0:π/10:π/2)*rad

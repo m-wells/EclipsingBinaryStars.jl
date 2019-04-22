@@ -9,7 +9,7 @@ struct Binary
     pri :: Star
     sec :: Star
     orb :: Orbit
-    P :: typeof(1.0u"d")
+    P :: typeof(1.0d)
     roche :: Roche
 end
 

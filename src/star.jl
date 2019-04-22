@@ -10,8 +10,8 @@
 #---------------------------------------------------------------------------------------------------
 
 struct Star
-    m :: typeof(1.0u"Msun")
-    r :: typeof(1.0u"Rsun")
+    m :: typeof(1.0Msun)
+    r :: typeof(1.0Rsun)
 end
 
 function Base.show( io :: IO

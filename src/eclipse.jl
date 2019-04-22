@@ -66,7 +66,7 @@ the angle ω, respectively.
 """
 function get_sky_pos( o :: Orbit
                     , ν :: Angle
-                    )   :: NTuple{3,typeof(1.0u"Rsun")}
+                    )   :: NTuple{3,typeof(1.0Rsun)}
     # orbital separation
     r = o.a*(1 - o.ε^2)/(1 + o.ε*cos(ν))
     # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
@@ -82,7 +82,7 @@ Return sky-projected separation in units of semi-major axis
 """
 function get_ρ( o :: Orbit
               , ν :: Angle
-              )   :: typeof(1.0u"Rsun")
+              )   :: typeof(1.0Rsun)
     x,y,_ = get_sky_pos(o,ν)
     return √(x^2 + y^2)
 end
@@ -168,8 +168,8 @@ end
 function eclipse_morphs( s :: Binary
                        )
     # potential critical eclipse points
-    return ( eclipse_morph_at_ν(s,0.5π*u"rad" - s.orb.ω)
-           , eclipse_morph_at_ν(s,1.5π*u"rad" - s.orb.ω)
+    return ( eclipse_morph_at_ν(s,0.5π*rad - s.orb.ω)
+           , eclipse_morph_at_ν(s,1.5π*rad - s.orb.ω)
            )
 end
 
@@ -419,15 +419,15 @@ https://en.wikipedia.org/wiki/True_anomaly
 function get_time_btw_νs( b  :: Binary
                         , ν₁ :: Angle
                         , ν₂ :: Angle
-                        )    :: typeof(1.0u"d")
+                        )    :: typeof(1.0d)
     if ν₁ > ν₂
-        ν₂ += 2π*u"rad"
+        ν₂ += 2π*rad
     end
     ea₁ = get_E_from_ν(b.orb, ν₁)
     ea₂ = get_E_from_ν(b.orb, ν₂)
     ma₁ = get_M_from_E(b.orb, ea₁)
     ma₂ = get_M_from_E(b.orb, ea₂)
-    n = 2π*u"rad"/b.P
+    n = 2π*rad/b.P
     return (ma₂ - ma₁)/n
 end
 
@@ -440,7 +440,7 @@ Input
 """
 function get_transit_duration_partial( s   :: Binary
                                      , ν_e :: Angle
-                                     )     :: typeof(1.0u"d")
+                                     )     :: typeof(1.0d)
 
     ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
 
@@ -454,7 +454,7 @@ function get_transit_duration_totann
 """
 function get_transit_duration_totann( s   :: Binary
                                     , ν_e :: Angle
-                                    )     :: typeof(1.0u"d")
+                                    )     :: typeof(1.0d)
 
     ν₂,ν₃ = get_inner_critical_νs(s, ν_e)
     if ν₃ < ν₂
@@ -507,7 +507,7 @@ A_s₁ + A_s₂
 function area_of_overlap( ρ  :: Unitful.Length
                         , r₁ :: Unitful.Length
                         , r₂ :: Unitful.Length
-                        )    :: typeof(1.0u"Rsun^2")
+                        )    :: typeof(1.0Rsun^2)
     @assert( abs(r₁ - r₂) < ρ < (r₁ + r₂)
            , string( "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)\n"
                    , "\tr₁ = $r₁\n"

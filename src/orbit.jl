@@ -12,8 +12,8 @@ P = √(a³(4π²) / (G(M₁+M₂)))
 function kep3rd_get_period( M₁ :: Unitful.Mass
                           , M₂ :: Unitful.Mass
                           , a  :: Unitful.Length
-                          )    :: typeof(1.0u"d")
-    return sqrt(a^3*4π^2/(1.0u"GMsun"*(ustrip(u"Msun",M₁) + ustrip(u"Msun",M₂))))
+                          )    :: typeof(1.0d)
+    return sqrt(a^3*4π^2/(1.0GMsun*(ustrip(Msun,M₁) + ustrip(Msun,M₂))))
 end
 
 """
@@ -23,15 +23,15 @@ a = ∛(G(M₁+M₂)(P/(2π))²)
 function kep3rd_get_semimajor( M₁ :: Unitful.Mass
                              , M₂ :: Unitful.Mass
                              , P  :: Unitful.Time
-                             )    :: typeof(1.0u"Rsun")
-    return cbrt(1.0u"GMsun"*(ustrip(u"Msun",M₁) + ustrip(u"Msun",M₂))*(P/(2π))^2)
+                             )    :: typeof(1.0Rsun)
+    return cbrt(1.0GMsun*(ustrip(Msun,M₁) + ustrip(Msun,M₂))*(P/(2π))^2)
 end
 
 struct Orbit
-    a :: typeof(1.0u"Rsun")
+    a :: typeof(1.0Rsun)
     ε :: Float64
-    i :: typeof(1.0u"rad")
-    ω :: typeof(1.0u"rad")
+    i :: typeof(1.0rad)
+    ω :: typeof(1.0rad)
 end
 
 function Base.show( io :: IO
