@@ -7,8 +7,8 @@
 
 using Test
 using Unitful
-using UnitfulAstro: Msun, Rsun, AU, GMsun
-import Unitful: d, yr, rad, °, Mass, Time, Length, Angle
+using UnitfulAstro: yr, Msun, Rsun, AU, GMsun
+import Unitful: d, rad, °, Mass, Time, Length, Angle
 
 #push!(LOAD_PATH, "../src/")
 using EclipsingBinaryStars
