@@ -420,7 +420,7 @@ function get_time_btw_νs( b  :: Binary
                         , ν₁ :: AngleRad
                         , ν₂ :: AngleRad
                         )    :: typeof(1.0d)
-    if ν₁ > ν₂
+    if ν₂ - ν₁ < 0rad
         ν₂ += 2π*rad
     end
     ea₁ = get_E_from_ν(b.orb, ν₁)
