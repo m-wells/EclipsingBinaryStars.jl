@@ -33,8 +33,8 @@ using EclipsingBinaryStars
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
     
-    @test pnt₁.ν ≈ π/2 - orb.ω
-    @test pnt₂.ν ≈ 3π/2 - orb.ω
+    @test pnt₁.ν ≈ (π/2)rad - orb.ω
+    @test pnt₂.ν ≈ (3π/2)rad - orb.ω
     @test pnt₁.m == EclipseType(3)
     #@show pnt₁.m
     @test pnt₂.m == EclipseType(5)
@@ -50,8 +50,8 @@ using EclipsingBinaryStars
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
 
-    @test pnt₁.ν ≈ π/2 - orb.ω
-    @test pnt₂.ν ≈ 3π/2 - orb.ω
+    @test pnt₁.ν ≈ (π/2)rad - orb.ω
+    @test pnt₂.ν ≈ (3π/2)rad - orb.ω
     @test pnt₁.m == EclipseType(0)
     #@show pnt₁.m
     @test pnt₂.m == EclipseType(0)
@@ -67,8 +67,8 @@ using EclipsingBinaryStars
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
 
-    @test pnt₁.ν ≈ π/2 - orb.ω
-    @test pnt₂.ν ≈ 3π/2 - orb.ω
+    @test pnt₁.ν ≈ (π/2)rad - orb.ω
+    @test pnt₂.ν ≈ (3π/2)rad - orb.ω
     @test pnt₁.m == EclipseType(2)
     #@show pnt₁.m
     @test pnt₂.m == EclipseType(4)
@@ -84,8 +84,8 @@ using EclipsingBinaryStars
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
 
-    @test pnt₁.ν ≈ π/2 - orb.ω
-    @test pnt₂.ν ≈ 3π/2 - orb.ω
+    @test pnt₁.ν ≈ (π/2)rad - orb.ω
+    @test pnt₂.ν ≈ (3π/2)rad - orb.ω
     @test pnt₁.m == EclipseType(1)
     #@show pnt₁.m
     @test pnt₂.m == EclipseType(0)
@@ -101,8 +101,8 @@ using EclipsingBinaryStars
     binary = getBinary(pri, sec, orb)
     pnt₁,pnt₂ = eclipse_morphs(binary)
 
-    @test pnt₁.ν ≈ π/2 - orb.ω
-    @test pnt₂.ν ≈ 3π/2 - orb.ω
+    @test pnt₁.ν ≈ (π/2)rad - orb.ω
+    @test pnt₂.ν ≈ (3π/2)rad - orb.ω
     @test pnt₁.m == EclipseType(2)
     #@show pnt₁.m
     @test pnt₂.m == EclipseType(6)
@@ -113,31 +113,31 @@ end
     pri = Star(5u"Msun", 2u"Rsun")
     sec = Star(1u"Msun", 1u"Rsun")
 
-    for ω in 0:π/3:2π
+    for ω in (0:π/3:2π)rad
         for ε in 0:0.1:1-eps()
             a = 20u"Rsun"
-            i = deg2rad(90)u"rad"
+            i = deg2rad(90)rad
             orb = Orbit(a,ε,i,ω)
             binary = getBinary(pri, sec, orb)
             
-            ν₁ = 0.0π*u"rad"
-            ν₂ = 1.0π*u"rad"
-            ν₃ = 2.0π*u"rad"
+            ν₁ = 0.0π*rad
+            ν₂ = 1.0π*rad
+            ν₃ = 2.0π*rad
             time1 = EclipsingBinaryStars.get_time_btw_νs(binary, ν₁, ν₂)
             time2 = EclipsingBinaryStars.get_time_btw_νs(binary, ν₂, ν₃)
             @test time1 ≈ time2
             @test time1 ≈ time2
 
-            ν₁ = 1.5π*u"rad"
-            ν₂ = 0.0π*u"rad"
-            ν₃ = 0.5π*u"rad"
+            ν₁ = 1.5π*rad
+            ν₂ = 0.0π*rad
+            ν₃ = 0.5π*rad
             time1 = EclipsingBinaryStars.get_time_btw_νs(binary, ν₁, ν₂)
             time2 = EclipsingBinaryStars.get_time_btw_νs(binary, ν₂, ν₃)
             @test time1 ≈ time2
 
-            ν₁ = 1.5π*u"rad"
-            ν₂ = 2.0π*u"rad"
-            ν₃ = 0.5π*u"rad"
+            ν₁ = 1.5π*rad
+            ν₂ = 2.0π*rad
+            ν₃ = 0.5π*rad
             time1 = EclipsingBinaryStars.get_time_btw_νs(binary, ν₁, ν₂)
             time2 = EclipsingBinaryStars.get_time_btw_νs(binary, ν₂, ν₃)
             @test time1 ≈ time2

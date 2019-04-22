@@ -9,18 +9,11 @@ module EclipsingBinaryStars
 export Star, Orbit, Binary, getBinary, eclipse_morph_at_ν, eclipse_morphs,
     EclipseType, frac_visible_area, undergo_rlof, get_time_btw_νs
 
-import Unitful: °, rad
-using Unitful, UnitfulAstro
+using Unitful
+import UnitfulAstro: Msun, Rsun, AU
+import Unitful: d, rad, °, Mass, Time, Length, Angle
 
-const Angle{T} = Quantity{T, NoDims, typeof(u"rad")}
-
-
-short(x::Quantity) = short(x.val)unit(x)
-function short(x::T) where T
-    return parse(T, sprint(show, x; context=:compact => true))
-end
-
-
+include("defunits.jl")
 include("star.jl")
 include("orbit.jl")
 include("roche.jl")

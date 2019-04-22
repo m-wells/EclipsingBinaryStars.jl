@@ -1,7 +1,7 @@
 name = "EclipsingBinaryStars"
 uuid = "298f00ba-5fcf-566c-9100-f8b551e1d946"
-version = "0.1.2"
 authors = ["m-wells"]
+version = "0.1.2"
 
 [deps]
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
