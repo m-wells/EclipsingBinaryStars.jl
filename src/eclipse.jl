@@ -43,9 +43,34 @@ Base.show(io :: IO, x :: EclipseType) = begin
     end
 end
 
-
-
 using Optim
+import Optim.optimize
+
+"""
+wrapper around optimize to work with quantities (at least the univariate case)
+"""
+function optimize( f :: Function
+                 , a :: T
+                 , b :: T
+                 , method :: Union{Brent,GoldenSection} = Brent()
+                 ) where {T <: Quantity}
+
+    t = unit(a)
+    g(x) = (f(x*t)).val
+    res = optimize( g
+                  , a.val
+                  , b.val
+                  , method
+                  )
+
+    return ( minimizer = res.minimizer*t
+           , minimum   = f(res.minimizer*t)
+           , converged = res.converged
+           )
+end
+
+cycle_forward(θ::AngleRad) = θ + (2π)rad
+cycle_forward(θ::AngleDeg) = θ + 360°
 
 """
 Get projected separation, ρ, at the specified true anomaly, ν
@@ -65,8 +90,8 @@ In the plane of the orbit, the semi-major and semi-minor axes are rotated from t
 the angle ω, respectively.
 """
 function get_sky_pos( o :: Orbit
-                    , ν :: Angle
-                    )   :: NTuple{3,typeof(1.0Rsun)}
+                    , ν :: AbstractAngle
+                    )   :: NTuple{3,LengthRsun}
     # orbital separation
     r = o.a*(1 - o.ε^2)/(1 + o.ε*cos(ν))
     # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
@@ -81,8 +106,8 @@ end
 Return sky-projected separation in units of semi-major axis
 """
 function get_ρ( o :: Orbit
-              , ν :: Angle
-              )   :: typeof(1.0Rsun)
+              , ν :: AbstractAngle
+              )   :: LengthRsun
     x,y,_ = get_sky_pos(o,ν)
     return √(x^2 + y^2)
 end
@@ -118,7 +143,7 @@ S₁----------)
 abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
 """
 function eclipse_morph_at_ν( s :: Binary
-                           , ν :: Angle
+                           , ν :: AbstractAngle
                            )   :: NamedTuple
 
     x,y,z = get_sky_pos(s.orb,ν)
@@ -187,9 +212,9 @@ Output
 
 Get the left and right bounds for the numerical solver.
 """
-function get_critical_bounds( ω   :: Angle
-                            , ν_e :: Angle
-                            )     :: NTuple{3,typeof(1.0rad)}
+function get_critical_bounds( ω   :: AngleRad
+                            , ν_e :: AngleRad
+                            )     :: NTuple{3,AngleRad}
     θ1 = -ω
     θ3 = π*rad - ω
     if θ1 < ν_e <= θ3
@@ -201,6 +226,21 @@ function get_critical_bounds( ω   :: Angle
     end
     return θ1,θ2,θ3
 end
+function get_critical_bounds( ω   :: AngleDeg
+                            , ν_e :: AngleDeg
+                            )     :: NTuple{3,AngleDeg}
+    θ1 = -ω
+    θ3 = 180° - ω
+    if θ1 < ν_e <= θ3
+        θ2 = 90° - ω
+    else
+        θ1 = 180° - ω
+        θ2 = 270° - ω
+        θ3 = 360° - ω
+    end
+    return θ1,θ2,θ3
+end
+
 
 #using Roots
 #   using Bisection
@@ -211,29 +251,27 @@ end
 #  0.000019 seconds (4 allocations: 352 bytes)
 
 function get_critical_ν( orb :: Orbit
-                       , ρ_c :: Unitful.Length
-                       , θₗ  :: Angle
-                       , θᵣ  :: Angle
-                       ; tol = 0.001
-                       )     :: typeof(1.0rad)
+                       , ρ_c :: Length
+                       , θₗ  :: T
+                       , θᵣ  :: T
+                       ; tol :: AbstractAngle = 0.0001rad
+                       ) where {T<:AbstractAngle}
 
     # make sure we are consistant with units
-    θₗ,θᵣ = uconvert.(rad,[θₗ,θᵣ])
-    f(ν) = abs(get_ρ(orb, ν*rad) - ρ_c).val
-
-    res = optimize( f
-                  , θₗ.val, θᵣ.val, Brent()
-                  )
-    @assert( Optim.converged(res) || (abs(Optim.minimum(res)) < tol)
+    f(ν::AbstractAngle) = abs(get_ρ(orb, ν) - ρ_c)
+    res = optimize(f,θₗ,θᵣ)
+    @assert( res.converged || (abs(res.minimum) < tol)
            , string( "Solution appears to be incorrect!\n"
-                   , "\tval = $(abs(Optim.minimum(res)))\n"
+                   , "\tval = $(abs(res.minimum))\n"
                    , "\ttol = $(tol)\n"
                    , "\tθₗ = $(θₗ)\n"
                    , "\tθᵣ = $(θᵣ)\n"
-                   , "\tconverged = $(converged(res))\n"
+                   , "\tconverged = $(res.converged)\n"
                    )
            )
-    return mod2pi(Optim.minimizer(res))rad
+
+    t = unit(θₗ)
+    return mod2pi(res.minimizer)t
 end
 
 """
@@ -265,23 +303,16 @@ for eclipse at ν + ω = 3π/2
 """
 
 function get_critical_νs( orb :: Orbit
-                        , ν_e :: Angle
-                        , ρ_c :: Unitful.Length
-                        ; tol = 0.001
-                        )     :: NTuple{2,typeof(1.0rad)}
+                        , ν_e :: AbstractAngle
+                        , ρ_c :: Length
+                        ; kwargs...
+                        )
 
     # bounding angles for the root finding
     θ1,θ2,θ3 = get_critical_bounds(orb.ω, ν_e)
 
-    # make sure everythin is in radians
-    θ1 = uconvert(rad, θ1)
-    θ2 = uconvert(rad, θ2)
-    θ3 = uconvert(rad, θ3)
-    f(ν) = abs(get_ρ(orb, ν*rad) - (ρ_c)).val
-    res = optimize(f, θ1.val, θ2.val)
-
-    ν1 = get_critical_ν(orb, ρ_c, θ1, θ2, tol = tol)
-    ν2 = get_critical_ν(orb, ρ_c, θ2, θ3, tol = tol)
+    ν1 = get_critical_ν(orb, ρ_c, θ1, θ2; kwargs...)
+    ν2 = get_critical_ν(orb, ρ_c, θ2, θ3; kwargs...)
 
     return (ν1,ν2)
 end
@@ -299,8 +330,8 @@ Output
 
 """
 function get_outer_critical_νs( b   :: Binary
-                              , ν_e :: Angle
-                              )     :: NTuple{2,typeof(1.0rad)}
+                              , ν_e :: AbstractAngle
+                              )
     return get_critical_νs(b.orb, ν_e, b.pri.r + b.sec.r)
 end
 
@@ -318,10 +349,11 @@ Output
 Note: these are only defined for total/annular eclipsers.
 """
 function get_inner_critical_νs( b   :: Binary
-                              , ν_e :: Angle
-                              )     :: NTuple{2,typeof(1.0rad)}
+                              , ν_e :: AbstractAngle
+                              )
     return get_critical_νs(b.orb, ν_e, abs(b.pri.r - b.sec.r))
 end
+
 
 """
 https://en.wikipedia.org/wiki/Eccentric_anomaly
@@ -336,10 +368,17 @@ so:
 """
 function get_E_from_ν( o :: Orbit
                      , ν :: AngleRad
-                     )   :: typeof(1.0rad)
+                     )   :: AngleRad
     return u.atan( √(1 - o.ε^2)*sin(ν)
                  , o.ε + cos(ν)
-                 )
+                 )rad
+end
+function get_E_from_ν( o :: Orbit
+                     , ν :: AngleDeg
+                     )   :: AngleDeg
+    return u.atand( √(1 - o.ε^2)*sin(ν)
+                 , o.ε + cos(ν)
+                 )°
 end
 
 """
@@ -351,61 +390,110 @@ where
     atan2(y,x) = arg(x,y) [Note: the swapping of x and y]
 """
 function get_ν_from_E( o :: Orbit
-                     , E :: Angle
-                     )   :: typeof(1.0rad)
-    return 2u.atan( √(1 + o.ε)*sin(E/2)
-                  , √(1 - o.ε)*cos(E/2)
-                  )
+                     , E :: AbstractAngle
+                     )   :: AngleRad
+    return 2atan( √(1 + o.ε)*sin(E/2)
+                , √(1 - o.ε)*cos(E/2)
+                )rad
+end
+
+function get_νd_from_E( o :: Orbit
+                      , E :: AbstractAngle
+                      )   :: AngleDeg
+    return 2atand( √(1 + o.ε)*sin(E/2)
+                 , √(1 - o.ε)*cos(E/2)
+                 )°
 end
 
 """
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
-function get_M_from_E( o :: Orbit
-                     , E :: Angle
-                     )   :: typeof(1.0rad)
-    return E - o.ε*sin(E)rad
+function get_Ma_from_E( o :: Orbit
+                      , E :: AbstractAngle
+                      )
+    return E - o.ε*sin(E)unit(E)
 end
 
 """
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
-function get_M_from_ν( o :: Orbit
-                     , ν :: Angle
-                     )   :: typeof(1.0rad)
+function get_Ma_from_ν( o :: Orbit
+                      , ν :: AbstractAngle
+                      )
     E = get_E_from_ν(o,ν)
-    return get_M_from_E(o,E)
+    return get_Ma_from_E(o,E)
+end
+
+"""
+try to avoid potential bounding issues
+"""
+function get_E_from_Ma_bounds(Ma :: AngleRad)
+    if Ma < (π)rad
+        return (-π/6)rad, (7π/6)rad
+    else
+        return (5π/6)rad, (13π/6)rad
+    end
+end
+
+"""
+try to avoid potential bounding issues
+"""
+function get_E_from_Ma_bounds(Ma :: AngleDeg)
+    if Ma < 180°
+        return -30°, 210°
+    else
+        return 150°, 390°
+    end
 end
 
 """
 https://en.wikipedia.org/wiki/Mean_anomaly
 """
-function get_E_from_M( o :: Orbit
-                     , M :: AngleRad
-                     ; tol = 0.001
-                     )   :: typeof(1.0rad)
+function get_E_from_Ma( o  :: Orbit
+                      , Ma :: AbstractAngle
+                      ; tol = 0.001
+                      )
+    
+    f(E::AbstractAngle) = abs(E - o.ε*sin(E)unit(Ma) - Ma)
+    a,b = get_E_from_Ma_bounds(M)
 
+    val = abs(res.minimum)
 
-    f(E) = abs(E - o.ε*sin(E) - M.val)
-    if M < (π)rad   # try to avoid potential bounding issues
-        res = optimize(f, -π/6, 7π/6, Brent())
+    if res.converged || (abs(res.minimum) < tol)
+        return res.minimizer
     else
-        res = optimize(f, 5π/6, 13π/6, Brent())
+        error( "get_E_from_Ma solution appears to be incorrect!\n"
+                , "\tval = $(abs(res.minimum))\n"
+                , "\ttol = $(tol)\n"
+                , "\tθₗ = $(θₗ)\n"
+                , "\tθᵣ = $(θᵣ)\n"
+                , "\tconverged = $(res.converged)\n"
+             )
     end
-
-    val = abs(Optim.minimum(res))
-    @assert(val < tol, "Solution appears to be incorrect!")
-    return Optim.minimizer(res)
 end
 
 """
 This function is especially useful for the creation of lightcurves and plots in terms of time
 """
-function get_ν_from_M( o :: Orbit
-                     , M :: Angle
-                     )   :: typeof(1.0rad)
-    E = get_E_from_M(o,M)
+function get_ν_from_Ma( o  :: Orbit
+                      , Ma :: AbstractAngle
+                      )
+    E = get_E_from_Ma(o,Ma)
     return get_ν_from_E(o,E)
+end
+
+function get_time_btw_Ma( Ma₁ :: T
+                        , Ma₂ :: T
+                        , P  :: Time
+                        ) where {T<:AngleRad}
+    return P*abs(Ma₂ - Ma₁)/(2π*rad)
+end
+
+function get_time_btw_Ma( Ma₁ :: T
+                        , Ma₂ :: T
+                        , P  :: Time
+                        ) where {T<:AngleDeg}
+    return P*abs(Ma₂ - Ma₁)/(360°)
 end
 
 """
@@ -422,16 +510,15 @@ Output
 https://en.wikipedia.org/wiki/True_anomaly
 """
 function get_time_btw_νs( b  :: Binary
-                        , ν₁ :: AngleRad
-                        , ν₂ :: AngleRad
-                        )    :: typeof(1.0d)
+                        , ν₁ :: T
+                        , ν₂ :: T
+                        ) where {T <: AbstractAngle}
 
-    ea₁ = get_E_from_ν(b.orb, ν₁)
-    ea₂ = get_E_from_ν(b.orb, ν₂)
-    ma₁ = get_M_from_E(b.orb, ea₁)
-    ma₂ = get_M_from_E(b.orb, ea₂)
-    n = 2π*rad/b.P
-    return abs(ma₂ - ma₁)/n
+    E₁ = get_E_from_ν(b.orb, ν₁)
+    E₂ = get_E_from_ν(b.orb, ν₂)
+    Ma₁ = get_Ma_from_E(b.orb, E₁)
+    Ma₂ = get_Ma_from_E(b.orb, E₂)
+    return get_time_btw_Ma(Ma₁, Ma₂, b.P)
 end
 
 """
@@ -442,8 +529,8 @@ Input
     ν_e -> true anomaly of mid eclipse
 """
 function get_transit_duration_partial( s   :: Binary
-                                     , ν_e :: Angle
-                                     )     :: typeof(1.0d)
+                                     , ν_e :: AbstractAngle
+                                     )
 
     ν₁,ν₄ = get_outer_critical_νs(s, ν_e)
 
@@ -456,12 +543,12 @@ function get_transit_duration_totann
     ν_e -> true anomaly of mid eclipse
 """
 function get_transit_duration_totann( s   :: Binary
-                                    , ν_e :: Angle
-                                    )     :: typeof(1.0d)
+                                    , ν_e :: AbstractAngle
+                                    )
 
     ν₂,ν₃ = get_inner_critical_νs(s, ν_e)
     if ν₃ < ν₂
-        ν₃ += (2π)rad
+        ν₃ = cycle_forward(ν₃)
     end
     return get_time_btw_νs(s, ν₂, ν₃)
 end
@@ -507,10 +594,10 @@ For A_s₂, we swap r₁ with r₂ and x with (ρ - x)
 The following function returns
 A_s₁ + A_s₂
 """
-function area_of_overlap( ρ  :: Unitful.Length
-                        , r₁ :: Unitful.Length
-                        , r₂ :: Unitful.Length
-                        )    :: typeof(1.0Rsun^2)
+function area_of_overlap( ρ  :: LengthRsun
+                        , r₁ :: LengthRsun
+                        , r₂ :: LengthRsun
+                        )    :: AreaRsunSq
     @assert( abs(r₁ - r₂) < ρ < (r₁ + r₂)
            , string( "Did not satisfy: |r₁ - r₂| < ρ < (r₁ + r₂)\n"
                    , "\tr₁ = $r₁\n"
@@ -519,8 +606,8 @@ function area_of_overlap( ρ  :: Unitful.Length
                    )
            )
     x = (ρ^2 + r₁^2 - r₂^2)/(2*ρ)
-    A_s₁ = (r₁^2)*ustrip(rad,u.acos(x/r₁)) - x*√(r₁^2 - x^2)
-    A_s₂ = (r₂^2)*ustrip(rad,u.acos((ρ-x)/r₂)) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
+    A_s₁ = (r₁^2)*acos(x/r₁) - x*√(r₁^2 - x^2)
+    A_s₂ = (r₂^2)*acos((ρ-x)/r₂) - (ρ - x)*√(r₂^2 - (ρ - x)^2)
     return A_s₁ + A_s₂
 end
 
@@ -531,7 +618,7 @@ Example:
 (1,0.75) means that the primary is fully visible while a quarter of the secondary is covered
 """
 function frac_visible_area( s :: Binary
-                          , ν :: Angle
+                          , ν :: AbstractAngle
                           )   :: Tuple{Float64,Float64}
 
     pnt = eclipse_morph_at_ν(s,ν)
@@ -546,7 +633,7 @@ function frac_visible_area( s :: Binary
     if pnt.m == EclipseType(2)      # primary is fully eclipsed by secondary
         return (0,1)
     elseif pnt.m == EclipseType(3)  # primary is transited by secondary
-        return (1 - area2/area1, 1)
+        return (1 - area2/area1, 1.0)
     elseif pnt.m == EclipseType(5)  # secondary is fully eclipsed by primary
         return (1,0)
     elseif pnt.m == EclipseType(6)  # secondary is transited by primary

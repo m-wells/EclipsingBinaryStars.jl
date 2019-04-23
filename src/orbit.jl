@@ -9,29 +9,29 @@
 a³/P² = G(M₁+M₂)/(4π²)
 P = √(a³(4π²) / (G(M₁+M₂)))
 """
-function kep3rd_get_period( M₁ :: Unitful.Mass
-                          , M₂ :: Unitful.Mass
-                          , a  :: Unitful.Length
-                          )    :: typeof(1.0d)
-    return sqrt(a^3*4π^2/(1.0GMsun*(ustrip(Msun,M₁) + ustrip(Msun,M₂))))
+function kep3rd_get_period( M₁ :: MassMsun
+                          , M₂ :: MassMsun
+                          , a  :: Length
+                          )
+    return sqrt(a^3*4π^2/((M₁.val + M₂.val)GMsun))
 end
 
 """
 a³/P² = G(M₁+M₂)/(4π²)
 a = ∛(G(M₁+M₂)(P/(2π))²)
 """
-function kep3rd_get_semimajor( M₁ :: Unitful.Mass
-                             , M₂ :: Unitful.Mass
-                             , P  :: Unitful.Time
-                             )    :: typeof(1.0Rsun)
-    return cbrt(1.0GMsun*(ustrip(Msun,M₁) + ustrip(Msun,M₂))*(P/(2π))^2)
+function kep3rd_get_semimajor( M₁ :: MassMsun
+                             , M₂ :: MassMsun
+                             , P  :: Time
+                             )
+    return cbrt((M₁.val + M₂.val)GMsun*(P/(2π))^2)
 end
 
 struct Orbit
-    a :: typeof(1.0Rsun)
+    a :: LengthRsun
     ε :: Float64
-    i :: typeof(1.0rad)
-    ω :: typeof(1.0rad)
+    i :: AngleRad
+    ω :: AngleRad
 end
 
 function Base.show( io :: IO

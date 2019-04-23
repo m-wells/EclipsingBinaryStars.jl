@@ -24,12 +24,12 @@ create Binary given primary, secondary, period (Days), eccn, inclination, arg. o
 """
 function getBinary( pri :: Star
                   , sec :: Star
-                  , P   :: Unitful.Time
+                  , P   :: Time
                   , ε   :: Float64
-                  , i   :: Angle
-                  , ω   :: Angle
+                  , i   :: AngleRad
+                  , ω   :: AngleRad
                   )
-    orb = Orbit( kep3rd_get_semimajor(pri.m,sec.m,P)
+    orb = Orbit( uconvert(Rsun,kep3rd_get_semimajor(pri.m,sec.m,P))
                , ε , i , ω
                )
     return Binary( pri , sec , orb , P
