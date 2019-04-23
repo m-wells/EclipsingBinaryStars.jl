@@ -9,7 +9,7 @@ struct Binary
     pri :: Star
     sec :: Star
     orb :: Orbit
-    P :: typeof(1.0d)
+    P :: TimeDay{Float64}
     roche :: Roche
 end
 
@@ -20,7 +20,7 @@ function Base.show( io :: IO
 end
 
 """
-create Binary given primary, secondary, period (Days), eccn, inclination, arg. of peri
+create Binary given primary, secondary, period, eccn, inclination, arg. of peri
 """
 function getBinary( pri :: Star
                   , sec :: Star

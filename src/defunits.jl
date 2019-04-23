@@ -6,7 +6,7 @@
 =#
 
 const MassMsun{T} = Quantity{T,u.𝐌,typeof(Msun)}
-const TimeDays{T} = Quantity{T,u.𝐓,typeof(d)}
+const TimeDay{T} = Quantity{T,u.𝐓,typeof(d)}
 const LengthAU{T} = Quantity{T,u.𝐋,typeof(AU)}
 const LengthRsun{T} = Quantity{T,u.𝐋,typeof(Rsun)}
 const AreaRsunSq{T} = Quantity{T,u.𝐋^2,typeof(Rsun^2)}
