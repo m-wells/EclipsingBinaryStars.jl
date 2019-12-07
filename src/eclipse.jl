@@ -1,48 +1,3 @@
-#=
-    eclipse
-    Copyright © 2018 Mark Wells <mwellsa@gmail.com>
-
-    Distributed under terms of the AGPL-3.0 license.
-=#
-
-"""
-0: no eclipse
-1: primary is partially eclipsed by secondary
-2: primary is fully eclipsed by secondary
-3: primary is transited by secondary
-4: secondary is partially eclipsed by primary
-5: secondary is fully eclipsed by primary
-6: secondary is transited by primary
-"""
-primitive type EclipseType <: Integer 8 end
-
-EclipseType(x :: Int64) = reinterpret(EclipseType, convert(Int8, x))
-
-EclipseType(x :: Int8) = reinterpret(EclipseType, x)
-
-Int8(x :: EclipseType) = reinterpret(Int8, x)
-
-Base.show(io :: IO, x :: EclipseType) = begin
-    print(io, Int8(x))
-    if x == EclipseType(0)
-        print(io, ": no eclipse")
-    elseif x == EclipseType(1)
-        print(io, ": primary is partially eclipsed by secondary")
-    elseif x == EclipseType(2)
-        print(io, ": primary is fully eclipsed by secondary")
-    elseif x == EclipseType(3)
-        print(io, ": primary is transited by secondary")
-    elseif x == EclipseType(4)
-        print(io, ": secondary is partially eclipsed by primary")
-    elseif x == EclipseType(5)
-        print(io, ": secondary is fully eclipsed by primary")
-    elseif x == EclipseType(6)
-        print(io, ": secondary is transited by primary")
-    else
-        print(io, ": unknown")
-    end
-end
-
 using Optim
 import Optim.optimize
 
@@ -71,46 +26,6 @@ end
 
 cycle_forward(θ::AngleRad) = θ + (2π)rad
 cycle_forward(θ::AngleDeg) = θ + 360°
-
-"""
-Get projected separation, ρ, at the specified true anomaly, ν
-
-Letting the longitude of the ascending node Ω=0 means that the reference direction is along the
-line of nodes. This allows for a convenient convention to be established. The x-axis of the orbital
-plane and the sky will be shared while the y axis of the orbital plane will be projected onto the
-plane of the sky by cos(i). We will denote the sky axes as χ (chi), ψ (psi), ζ (zeta). The plane of
-the sky axes are defined as
-    χ = x
-    ψ = y⋅cos(i)
-    ζ = y⋅sin(i)
-where ζ is the axis that points toward the observer and is useful for determining which star is in
-front of the other. ζ > 0 means that the secondary is closer to the observer than the primary.
-
-In the plane of the orbit, the semi-major and semi-minor axes are rotated from the x and y axes by
-the angle ω, respectively.
-"""
-function get_sky_pos( o :: Orbit
-                    , ν :: AbstractAngle
-                    )   :: NTuple{3,LengthRsun}
-    # orbital separation
-    r = o.a*(1 - o.ε^2)/(1 + o.ε*cos(ν))
-    # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
-    #x,y = rotmatrix(s.ω)*[r⋅cos(ν), r⋅sin(ν)]
-    x = r*cos(o.ω)*cos(ν) - r*sin(o.ω)*sin(ν)
-    y = r*sin(o.ω)*cos(ν) + r*cos(o.ω)*sin(ν)
-    # need to incline orbital y
-    return x, y*cos(o.i), y*sin(o.i)
-end
-
-"""
-Return sky-projected separation in units of semi-major axis
-"""
-function get_ρ( o :: Orbit
-              , ν :: AbstractAngle
-              )   :: LengthRsun
-    x,y,_ = get_sky_pos(o,ν)
-    return √(x^2 + y^2)
-end
 
 """
 eclipse_morph_at_ν

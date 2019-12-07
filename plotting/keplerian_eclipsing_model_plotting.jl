@@ -7,10 +7,13 @@
 
 using PyPlot
 using PyCall
-@pyimport matplotlib.patches as patches
+patches = matplotlib.patches
 using LaTeXStrings
 
-include("true_anom.jl")
+using EclipsingBinaryStars
+using Base.Printf: @sprintf
+
+using UnitfulAstro: Msun, Rsun, yr, AU
 
 function plot_binary_ν( s :: Binary
                       , νs
@@ -194,9 +197,9 @@ function test_binary()
     a=20.0
     title = latexstring(title, L", $a=20$R$_\odot$")
 
-    pri = Star(m=5, r=2)
+    pri = Star(5Msun, 2Rsun)
     title = latexstring(title, L", $r_1=2$R$_\odot$")
-    sec = Star(m=1, r=1)
+    sec = Star(1Msun, 1Rsun)
     title = latexstring(title, L", $r_2=1$R$_\odot$")
 
     orb = Orbit(ω=ω, ε=ε, i=i, a=a)
