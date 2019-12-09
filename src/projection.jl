@@ -19,7 +19,7 @@ the angle ω, respectively.
 """
 function get_sky_pos(o::Orbit, ν::Angle)
     # orbital separation
-    r = o.a*(1 - o.ε^2)/(1 + o.ε*cos(ν))
+    r = D(o.a, o.ε, o.ν)
     # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
     #x,y = rotmatrix(s.ω)*[r⋅cos(ν), r⋅sin(ν)]
     x = r*cos(o.ω)*cos(ν) - r*sin(o.ω)*sin(ν)

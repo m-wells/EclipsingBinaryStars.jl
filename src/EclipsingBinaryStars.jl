@@ -20,7 +20,7 @@ using Unitful: uconvert, ustrip
 
 using UnitfulAstro: Msun, Rsun, Lsun, AU
 
-using Optim
+using Roots
 
 ############################################################################################
 # Convenience
@@ -28,42 +28,12 @@ using Optim
 const Angle{T} = Union{Quantity{T, NoDims, typeof(°)}, Quantity{T, NoDims, typeof(rad)}}
 const G_4π² = G/(4π^2)
 
-compact(x) = sprint(print, x; context=:compact=>true)
-
-_fieldnames(::T) where T = fieldnames(T)
-
-floatunits(x::Quantity{T,D,U}) where {T,D,U} = convert(Quantity{Float64,D,U}, x)
-
-"""
-    printfields(io, obj, [toplevel])
-
-Convenience function to assist in printing nested types.
-"""
-function printfields(io::IO, obj::T, toplevel=true) where T
-    n = nfields(obj)
-
-    toplevel && print(io, "(")
-
-    for (i,k) in enumerate(_fieldnames(obj))
-        v = getfield(obj,k)
-
-        if nfields(v) > 1
-            toplevel && print(io, k, "=(")
-            printfields(io, v, false)
-            toplevel && print(io, ")")
-        else
-            print(io, k, "=", compact(v))
-        end
-
-        n > 1 && i < n && print(io, ", ")
-    end
-    toplevel && print(io, ")")
-end
-
 ############################################################################################
 
+include("./utils.jl")
 include("./zams.jl")
-include("./potential.jl")
+include("./star.jl")
+include("./roche.jl")
 include("./binary.jl")
 include("./projection.jl")
 ##include("detached.jl")
