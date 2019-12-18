@@ -24,7 +24,8 @@ function get_sky_pos(o, ν::Angle)
     i = get_i(o)
 
     # orbital separation
-    r = D(a, ε, ν)
+    r = a*(1-ε^2)/(1+ε*cos(ν))
+
     # rotate by ω to get the orbital x and y (using matrix multiplication is inefficient)
     #x,y = rotmatrix(s.ω)*[r⋅cos(ν), r⋅sin(ν)]
     x = r*cos(ω)*cos(ν) - r*sin(ω)*sin(ν)
@@ -51,6 +52,7 @@ Alignment of system where the secondary is in front of the primary.
 If there is an eclipse it is the midpoint of the eclipse of the primary.
 """
 superior_conj(ω::Angle) = mod(90°-ω, 360°)
+superior_conj(b) = superior_conj(get_ω(b))
 
 """
     inferior_conj(ω::Angle)
@@ -60,227 +62,159 @@ Alignment of system where the primary is in front of the secondary.
 If there is an eclipse it is the midpoint of the eclipse of the secondary.
 """
 inferior_conj(ω::Angle) = mod(270°-ω, 360°)
+inferior_conj(b) = inferior_conj(get_ω(b))
 
-function eclipse_geometry(b::Binary, ν::Angle)
-    ρ = proj_sep(b)
-    @show ρ
-    #R₁ = get_pradius(b)
-    #R₂ = get_sradius(b)
+############################################################################################
+
+primitive type EclipseFlag <: Integer 8 end
+
+EclipseFlag(x::Int8) = reinterpret(EclipseFlag, x)
+EclipseFlag(x) = EclipseFlag(convert(Int8,x))
+
+Int8(x::EclipseFlag) = reinterpret(Int8, x)
+
+import Base: +
++(x::EclipseFlag, y::EclipseFlag) = EclipseFlag(Int8(x) + Int8(y))
+
+function Base.show(io::IO, x::EclipseFlag)
+    if x == EclipseFlag(0)
+        print(io, "No Primary Eclipse")
+    elseif x == EclipseFlag(1)
+        print(io, "Partial Primary Eclipse")
+    elseif x == EclipseFlag(2)
+        print(io, "Total Primary Eclipse")
+    elseif x == EclipseFlag(3)
+        print(io, "Annular Primary Eclipse")
+
+    elseif x == EclipseFlag(4)
+        print(io, "No Secondary Eclipse")
+    elseif x == EclipseFlag(5)
+        print(io, "Partial Secondary Eclipse")
+    elseif x == EclipseFlag(6)
+        print(io, "Total Secondary Eclipse")
+    elseif x == EclipseFlag(7)
+        print(io, "Annular Secondary Eclipse")
+
+    else
+        error("unknown eclipse flag value")
+    end
 end
 
-#
+############################################################################################
+
+function eclipse_geometry(b::Binary, R₁::Length, R₂::Length, ν::Angle)
+    ρ = proj_sep(b,ν)
+    
+    ρ ≥ (R₁ + R₂) && return EclipseFlag(0)
+    ρ > abs(R₁ - R₂) && return EclipseFlag(1)
+
+    ρ.val < 0 && error("projected separation shouldn't be negative")
+
+    return R₂ ≥ R₁ ? EclipseFlag(2) : EclipseFlag(3)
+end
+
+function primary_eclipse_geometry(b::Binary)
+    R₁ = get_pradius(b)
+    R₂ = get_sradius(b)
+    ν = superior_conj(b)
+    return eclipse_geometry(b, R₁, R₂, ν)
+end
+
+function secondary_eclipse_geometry(b::Binary)
+    R₁ = get_pradius(b)
+    R₂ = get_sradius(b)
+    ν = inferior_conj(b)
+    return eclipse_geometry(b, R₂, R₁, ν) + EclipseFlag(4)
+end
+
+eclipse_geometry(b::Binary) = (primary_eclipse_geometry(b), secondary_eclipse_geometry(b))
+
+"""
+Area of circular sectors
+
+https://en.wikipedia.org/wiki/Circular_segment
+
+Given two circles with centers at (0,0) and (ρ,0) and radii of r1 and r2, respectively we define a
+pair of critical points where the two circles intersect each other. These critical points have
+coordinates (x,y) and (x,-y). Using the equation of a circle we can write
+          x² + y² = r₁²
+    (x - ρ)² + y² = r₂²
+which yields
+    r₂² - (x - ρ)² = r₁² - x²
+    r₂² - (x² - 2xρ + ρ²) = r₁² - x²
+    r₂² + 2xρ - ρ² = r₁²
+    2xρ = ρ² + r₁² - r₂²
+    x = (ρ² + r₁² - r₂²)/(2ρ)
+
+The area of sector 1, A_s₁, is the area of the wedge, A_w₁, with angle θ₁ and r₁ minus the area of
+the triangle, A_t₁, with points (0,0),(x,y),(x,-y). First we solve for θ₁
+    θ₁/2 = u.acos(x/r₁)
+    θ₁ = 2⋅u.acos(x/r₁)
+which allows for the calculation of A_w₁
+    A_w₁ = (θ₁/2)⋅r₁²
+    A_w₁ = (2⋅u.acos(x/r₁)/2)⋅r₁²
+    A_w₁ = r₁²⋅u.acos(x/r₁)
+A_t₁ is
+    A_t₁ = 2⋅(¹/₂)⋅x⋅y
+    A_t₁ = x⋅y
+where
+    y = √(r₁² - x²)
+
+Finally we get
+    A_s₁ = A_w₁ - A_t₁
+         = r₁²⋅u.acos(x/r₁) - x⋅√(r₁² - x²)
+For A_s₂, we swap r₁ with r₂ and x with (ρ - x)
+    A_s₂ = A_w₂ - A_t₂
+         = r₂²⋅u.acos((ρ-x)/r₂) - (ρ - x)⋅√(r₂² - (ρ - x)²)
+
+The following function returns
+A_s₁ + A_s₂
+"""
+function area_of_overlap(ρ::Length, R₁::Length, R₂::Length)
+    (abs(R₁ - R₂) < ρ < (R₁ + R₂)) || error("""
+        Did not satisfy: |R₁ - R₂| < ρ < (R₁ + R₂)
+            R₁ = $R₁
+            R₂ = $R₂
+            ρ  = $ρ
+        """)
+    x = (ρ^2 + R₁^2 - R₂^2)/(2*ρ)
+    A_s₁ = (R₁^2)*acos(x/R₁) - x*√(R₁^2 - x^2)
+    A_s₂ = (R₂^2)*acos((ρ-x)/R₂) - (ρ - x)*√(R₂^2 - (ρ - x)^2)
+    return A_s₁ + A_s₂
+end
+
 #"""
-#0: no eclipse
-#1: primary is partially eclipsed by secondary
-#2: primary is fully eclipsed by secondary
-#3: primary is transited by secondary
-#4: secondary is partially eclipsed by primary
-#5: secondary is fully eclipsed by primary
-#6: secondary is transited by primary
-#"""
-#struct EclipseType
-#    flag::Int8
+#Return a tuple indicating the visible fraction of each star at ν
 #
-#    function EclipseType(x)
-#        (0 ≤ x ≤ 6) || error("""
-#            flag = $flag
-#            EclipseType flag must be an Integer from 0 to 6
-#            """
-#           )
-#        new(flag)
+#Example:
+#(1,0.75) means that the primary is fully visible while a quarter of the secondary is covered
+#"""
+#function frac_visible_area(b::Binary, ν::Angle)
+#    pnt = eclipse_morph_at_ν(s,ν)
+#
+#    if pnt.m == EclipseType(0)
+#        return (1,1)
 #    end
-#end
 #
-#eclipse_flag(x::EclipseType) = x.flag
+#    area1 = π*s.pri.r^2
+#    area2 = π*s.sec.r^2
 #
-#function Base.show(io::IO, x::EclipseType)
-#    flag = eclipse_flag(x)
-#    if flag == 0
-#        print(io, "no eclipse")
-#    elseif flag == 1
-#        print(io, "partial eclipse of primary")
-#    elseif flag == 2
-#        print(io, "total eclipse of primary")
-#    elseif flag == 3
-#        print(io, "annular eclipse of primary")
-#    elseif flag == 4
-#        print(io, "partial eclipse of secondary")
-#    elseif flag == 5
-#        print(io, "total eclipse of secondary")
-#    elseif flag == 6
-#        print(io, "annular eclipse of secondary")
-#    else
-#        error("inappropriate flag value encountered")
+#    if pnt.m == EclipseType(2)      # primary is fully eclipsed by secondary
+#        return (0,1)
+#    elseif pnt.m == EclipseType(3)  # primary is transited by secondary
+#        return (1 - area2/area1, 1.0)
+#    elseif pnt.m == EclipseType(5)  # secondary is fully eclipsed by primary
+#        return (1,0)
+#    elseif pnt.m == EclipseType(6)  # secondary is transited by primary
+#        return (1, 1 - area1/area2)
 #    end
-#end
 #
-#############################################################################################
-#
-#"""
-#eclipse_flag(b::Binary, ν::Angle)
-##
-#Determine what (if any) type of eclipse occurs at ν.
-#"""
-#function eclipse_flag(b::Binary, ν::Angle)
-#    x,y,z = get_sky_pos(s.orb,ν)
-#    ρ = sqrt(x^2+y^2)
-#
-#    r_p = get_pradius(b)
-#    r_s = get_sradius(b)
-#
-#    ρ.val < 0 && error("encountered negative projected separation")
-#    iszero(z.val) && error("z orbital distance is zero")
-#
-#    if r_p + r_s ≤ ρ
-#        return EclipseType(0)           # no eclipse
-#
-#    elseif abs(r_p - r_s) < ρ       # partial eclipses
-#        if z.val > 0
-#            return EclipseType(1)       # partial eclipse of primary
-#        else
-#            return EclipseType(4)       # partial eclipse of secondary
-#        end
-#
-#    elseif z.val > 0            # secondary is in front
-#        if r_s ≥ r_p                # secondary is larger (or just as large)
-#            return EclipseType(2)       # total eclipse of primary
-#        else                        # secondary is smaller
-#            return EclipseType(3)       # annular eclipse of primary
-#        end
-#
-#    else                        # primary is in front
-#        if r_p ≥ r_s                # primary is larger (or just as large)
-#            return EclipseType(5)       # total eclipse of secondary
-#        else                        # primary is smaller
-#            return EclipseType(6)       # annular eclipse of secondary
-#        end
+#    area_overlap = area_of_overlap(pnt.ρ, s.pri.r, s.sec.r)
+#    if pnt.m == EclipseType(1)      # primary is partially eclipsed by secondary
+#        return (1 - area_overlap/area1, 1)
+#    elseif pnt.m == EclipseType(4)  # secondary is partially eclipsed by primary
+#        return (1, 1 - area_overlap/area2)
 #    end
-#end
 #
-###struct NoEclipse <: AbstractEclipse end
-###
-###"""
-###    PartialEclipse()
-###
-###ν1: true anomaly of first contact
-###νm: true anomaly of mid eclipse
-###ν4: true anomaly of last contact
-###"""
-###struct PartialEclipse <: AbstractEclipse
-###    ν1::typeof(1.0°)
-###    νm::typeof(1.0°)
-###    ν4::typeof(1.0°)
-###end
-###
-###"""
-###    TotalEclipse()
-###
-###A total eclipse is when a larger body completely blocks a smaller body.
-###ν1: true anomaly of first contact
-###ν2: true anomaly of second contact
-###νm: true anomaly of mid eclipse
-###ν3: true anomaly of third contact
-###ν4: true anomaly of last contact
-###"""
-###struct TotalEclipse <: AbstractEclipse
-###    ν1::typeof(1.0°)
-###    ν2::typeof(1.0°)
-###    νm::typeof(1.0°)
-###    ν3::typeof(1.0°)
-###    ν4::typeof(1.0°)
-###end
-###
-###"""
-###    AnnularEclipse()
-###
-###An annular eclipse is when all the area of a smaller body is blocking light from a larger body.
-###ν1: true anomaly of first contact
-###ν2: true anomaly of second contact
-###νm: true anomaly of mid eclipse
-###ν3: true anomaly of third contact
-###ν4: true anomaly of last contact
-###"""
-###struct AnnularEclipse <: AbstractEclipse
-###    ν1::typeof(1.0°)
-###    ν2::typeof(1.0°)
-###    νm::typeof(1.0°)
-###    ν3::typeof(1.0°)
-###    ν4::typeof(1.0°)
-###end
-###
-###Base.show(io::IO, e::AbstractEclipse) = printfields(io,e)
-###Base.show(io::IO, e::T) where T<:AbstractEclipse = print(io, T, e)
-##
-##"""
-##    eclipse(b::Binary, ν::Angle)
-##
-##Determine if an eclipse occurs at ν.
-##ρ is the projected sky separation.
-##
-##0 - no eclipse
-##ρ ≥ S₁.r + S₂.r
-##
-##1 - partial eclipse
-##abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
-##
-##
-##2 - annular or total
-##[---ρ---]
-##S₁----------)
-##   (---S₂---)
-##if R is the larger radius and r is the smaller
-##then a total or annular eclipse happens when R >= ρ+r
-##which can be rewritten as ρ <= R - r
-##R - r = abs(S₁.r - S₂.r)
-##ρ <= abs(S₁.r - S₂.r)
-##
-##"""
-##function eclipse_morph_at_ν( s :: Binary
-##                           , ν :: AbstractAngle
-##                           )   :: NamedTuple
-##
-##    x,y,z = get_sky_pos(s.orb,ν)
-##    ρ = sqrt(x^2+y^2)
-##    m = EclipseType(-1)
-##
-##    if ρ >= s.pri.r + s.sec.r           # no eclipse case
-##        m = EclipseType(0)
-##
-##    elseif ρ > abs(s.pri.r - s.sec.r)   # partial case
-##        if z.val > 0                    # secondary is in front
-##            m = EclipseType(1)          #   primary is partially eclipsed
-##        else                            # primary is in front
-##            m = EclipseType(4)          #   secondary is partially eclipsed
-##        end
-##
-##    elseif ρ.val >= 0                   # total/annular cases
-##        if s.pri.r > s.sec.r            # primary is larger
-##            if z.val > 0                #   secondary is in front
-##                m = EclipseType(3)      #       primary is transited
-##            else                        #   primary is in front
-##                m = EclipseType(5)      #       secondary is fully eclipsed
-##            end
-##        elseif s.pri.r < s.sec.r        # secondary is larger
-##            if z.val > 0                #   secondary is in front
-##                m = EclipseType(2)      #       primary is fully eclipsed
-##            else                        #   primary is in front
-##                m = EclipseType(6)      #       secondary is transited
-##            end
-##        else                            # if primary and secondary are same size
-##            if iszero(ρ.val)            #   need to be perfectly aligned (or it would be a partial eclipse)
-##                if z.val > 0            #   secondary is in front
-##                    m = EclipseType(2)  #       primary is fully eclipsed
-##                else                    #   primary is in front
-##                    m = EclipseType(5)  #       secondary is fully eclipsed
-##                end
-##            else
-##                error("To have a non-partial eclipse by equal size stars ρ needs to be 0 not $ρ")
-##            end
-##        end
-##    else
-##        error("Unexpected value of ρ: $ρ")
-##    end
-##    return (ν=ν, m=m, ρ=ρ)
-##end
-##
-##
+#    error("Unrecognized morph value of $(pnt.m)")
+#end

@@ -21,12 +21,12 @@ end
 get_mass(s::Star) = s.m
 get_radius(s::Star) = s.r
 
+Base.promote_rule(::Type{Star{T}}, ::Type{Star{S}}) where {T<:Real,S<:Real} = Star{promote_type(T,S)}
+
 function Base.convert(::Type{Star{T}}, x::Star{S}) where {T,S}
     return Star(unit_convert(T, Msun, get_mass(x)),
                 unit_convert(T, Rsun, get_radius(x)))
 end
-
-promote_rule(::Type{Star{T}}, ::Type{Star{S}}) where {T<:Real,S<:Real} = Star{promote_type(T,S)}
 
 Base.show(io::IO, s::Star) = printfields(io, s)
 Base.show(io::IO, ::MIME"text/plain", s::Star) = print(io, typeof(s), s)

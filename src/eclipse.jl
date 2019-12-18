@@ -140,77 +140,6 @@
 #    end
 #end
 #
-#function get_eclipse_types(b ::Binary)
-#    R₁ = get_pradius(b)
-#    R₂ = get_sradius(b)
-#    ω = get_ω(b)
-#
-#    ν1 = 270° - ω
-#    ν2 = 90° - ω
-#    x,y,z1 = get_sky_pos(b,ν1)
-#    ρ_proj1 = sqrt(x^2+y^2)
-#
-#    x,y,z2 = get_sky_pos(b,ν2)
-#    ρ_proj2 = sqrt(x^2+y^2)
-#
-#    sign(z1)*sign(z2) == -1 || error("Did not detect a sign change in projection depths!\n",
-#                                     "z1 = ", z1, "\n",
-#                                     "z2 = ", z2
-#                                    )
-#
-#    if sign(z1) == 1    # at ν1 secondary is in front
-#        peclipse_type = get_eclipse_type(R₁, R₂, ρ_proj1, z1)
-#        seclipse_type = get_eclipse_type(R₁, R₂, ρ_proj2, z2)
-#    else                # at ν1 primary is in front
-#        peclipse_type = get_eclipse_type(R₁, R₂, ρ_proj2, z2)
-#        seclipse_type = get_eclipse_type(R₁, R₂, ρ_proj1, z1)
-#    end
-#    return (peclipse_type, seclipse_type)
-#end
-
-# primary in front secondary in back
-#    (z1 < 0) && (z2 > 0) && return eclip1
-#
-#    if ρ ≥ R₁ + R₂           # no eclipse case
-#        return NoEclipse
-#
-#    elseif ρ > abs(s.pri.r - s.sec.r)   # partial case
-#        if z.val > 0                    # secondary is in front
-#            m = EclipseType(1)          #   primary is partially eclipsed
-#        else                            # primary is in front
-#            m = EclipseType(4)          #   secondary is partially eclipsed
-#        end
-#
-#    elseif ρ.val >= 0                   # total/annular cases
-#        if s.pri.r > s.sec.r            # primary is larger
-#            if z.val > 0                #   secondary is in front
-#                m = EclipseType(3)      #       primary is transited
-#            else                        #   primary is in front
-#                m = EclipseType(5)      #       secondary is fully eclipsed
-#            end
-#        elseif s.pri.r < s.sec.r        # secondary is larger
-#            if z.val > 0                #   secondary is in front
-#                m = EclipseType(2)      #       primary is fully eclipsed
-#            else                        #   primary is in front
-#                m = EclipseType(6)      #       secondary is transited
-#            end
-#        else                            # if primary and secondary are same size
-#            if iszero(ρ.val)            #   need to be perfectly aligned (or it would be a partial eclipse)
-#                if z.val > 0            #   secondary is in front
-#                    m = EclipseType(2)  #       primary is fully eclipsed
-#                else                    #   primary is in front
-#                    m = EclipseType(5)  #       secondary is fully eclipsed
-#                end
-#            else
-#                error("To have a non-partial eclipse by equal size stars ρ needs to be 0 not $ρ")
-#            end
-#        end
-#    else
-#        error("Unexpected value of ρ: $ρ")
-#    end
-#    return (ν=ν, m=m, ρ=ρ)
-#end
-
 #function eclipse_morphs( s  :: Binary
 #                       )
 #    # potential critical eclipse points
@@ -670,19 +599,3 @@
 #
 #    error("Unrecognized morph value of $(pnt.m)")
 #end
-#
-##"""
-##function periastron_check
-##
-##input:
-##    s  :: Binary
-##    f  :: threshold factor
-##            1 means they can kiss (assuming spheres, which they aren't)
-##            <1 means they would collide
-##"""
-##function periastron_check( s  :: Binary
-##                         , f = 1.5
-##                         )  :: Bool
-##    peridist = (1 - s.orb.ε)*s.orb.a
-##    return peridist >= s.pri.r + s.sec.r
-##end
