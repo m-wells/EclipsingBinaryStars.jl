@@ -17,19 +17,21 @@ using Unitful: Quantity, NoDims, FreeUnits
 using Unitful: 𝐌, Mass, 𝐋, Length, 𝐓, Time, Power
 using Unitful: °, rad, d
 using Unitful: G
-using Unitful: uconvert, ustrip, numtype, dimension
+using Unitful: uconvert, ustrip, dimension
 
-using UnitfulAstro: Msun, Rsun, Lsun, AU
+using UnitfulAstro: Msun, Rsun, Lsun, AU, GMsun
 
 using Roots
 
 ############################################################################################
 # Convenience
-Unitful.numtype(::T) where T<:Real = T
-ret_type(x::Vararg) = promote_type(numtype.(x)...)
+#Unitful.numtype(::T) where T<:Real = T
+
+@derived_dimension GravMass dimension(1GMsun)
 
 const Angle{T} = Union{Quantity{T, NoDims, typeof(°)}, Quantity{T, NoDims, typeof(rad)}}
-const G_4π² = G/(4π^2)
+#const G_4π² = G/(4π^2)
+const LengthOrTime{T} = Union{Length{T}, Time{T}}
 
 ############################################################################################
 
@@ -39,7 +41,7 @@ include("./star.jl")
 include("./roche.jl")
 include("./binary.jl")
 include("./projection.jl")
-#include("./eclipse.jl")
+include("./eclipse.jl")
 ##include("detached.jl")
 
 include("./plot_recipes.jl")

@@ -1,8 +1,17 @@
+numtype(::Quantity{T,D,U}) where {T,D,U} = T
+numtype(::T) where T<:Real = T
+
+ret_type(x::Vararg) = promote_type(numtype.(x)...)
+
 compact(x) = sprint(print, x; context=:compact=>true)
 
 _fieldnames(::T) where T = fieldnames(T)
 
-floatunits(x::Quantity{T,D,U}) where {T,D,U} = convert(Quantity{Float64,D,U}, x)
+function unit_convert(::Type{T}, u::FreeUnits, x::Quantity) where T
+    return convert(typeof(one(T)*u), x)
+end
+
+unit_convert(u::FreeUnits, x::Quantity{T,D,U}) where {T,D,U} = unit_convert(T, u, x)
 
 """
     printfields(io, obj, [toplevel])

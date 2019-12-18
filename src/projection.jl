@@ -43,7 +43,31 @@ function proj_sep(o, ν::Angle)
     return √(x^2 + y^2)
 end
 
-#############################################################################################
+"""
+    superior_conj(ω::Angle)
+
+Return true anomaly of superior conjunction (primary is at superior conjunction).
+Alignment of system where the secondary is in front of the primary.
+If there is an eclipse it is the midpoint of the eclipse of the primary.
+"""
+superior_conj(ω::Angle) = mod(90°-ω, 360°)
+
+"""
+    inferior_conj(ω::Angle)
+
+Return true anomaly of inferior conjunction (primary is at inferior conjunction).
+Alignment of system where the primary is in front of the secondary.
+If there is an eclipse it is the midpoint of the eclipse of the secondary.
+"""
+inferior_conj(ω::Angle) = mod(270°-ω, 360°)
+
+function eclipse_geometry(b::Binary, ν::Angle)
+    ρ = proj_sep(b)
+    @show ρ
+    #R₁ = get_pradius(b)
+    #R₂ = get_sradius(b)
+end
+
 #
 #"""
 #0: no eclipse

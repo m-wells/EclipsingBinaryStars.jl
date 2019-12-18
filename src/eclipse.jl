@@ -26,147 +26,147 @@
 #
 #cycle_forward(θ ::AngleRad) = θ + (2π)rad
 #cycle_forward(θ ::AngleDeg) = θ + 360°
-
-abstract type AbstractEclipse end
-
-"""
-    NoEclipse()
-"""
-struct NoEclipse <:AbstractEclipse end
-
-"""
-    PartialEclipse(ν1 ::Angle, ν2 ::Angle)
-
-ν1 is true anomaly of first contact
-ν2 is true anomaly of last contact
-"""
-struct PartialEclipse <:AbstractEclipse
-    ν1 ::Angle
-    ν2 ::Angle
-end
-
-"""
-    TotalEclipse(ν1 ::Angle, ν2 ::Angle, ν3 ::Angle, ν4 ::Angle)
-
-ν1 is true anomaly of first contact
-ν2 is true anomaly of second contact
-ν3 is true anomaly of third contact
-ν4 is true anomaly of last contact
-"""
-struct TotalEclipse <:AbstractEclipse
-    ν1 ::Angle
-    ν2 ::Angle
-    ν3 ::Angle
-    ν4 ::Angle
-end
-
-"""
-    AnnularEclipse(ν1 ::Angle, ν2 ::Angle, ν3 ::Angle, ν4 ::Angle)
-
-ν1 is true anomaly of first contact
-ν2 is true anomaly of second contact
-ν3 is true anomaly of third contact
-ν4 is true anomaly of last contact
-"""
-struct AnnularEclipse <:AbstractEclipse
-    ν1 ::Angle
-    ν2 ::Angle
-    ν3 ::Angle
-    ν4 ::Angle
-end
-
-struct EclipsingBinary{E1 <:AbstractEclipse, E2 <:AbstractEclipse}
-    binary ::Binary
-    pri_eclipse ::E1
-    sec_eclipse ::E2
-end
-
-"""
-eclipse_morph_at_ν
-
-S₁ is the center of star 1
-    ---) is the radius of star 1
-S₂ is the center of star 2
-    (--- is the radius of star 2
-
-0 - no eclipse
-[-----ρ----]
-S₁---)
-      (---S₂
-ρ >= S₁.r + S₂.r
-
-2 - annular or total
-[---ρ---]
-S₁----------)
-   (---S₂---)
-if R is the larger radius and r is the smaller
-then a total or annular eclipse happens when R >= ρ+r
-which can be rewritten as ρ <= R - r
-R - r = abs(S₁.r - S₂.r)
-ρ <= abs(S₁.r - S₂.r)
-
-1 - partial eclipse
-[---------ρ---------]
-S₁----------)
-           (---S₂---)
-abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
-"""
-function get_eclipse_type(R₁ ::Length, R₂ ::Length, ρ_proj ::Length, z ::Length)
-    if ρ_proj ≥ R₁ + R₂
-        return NoEclipse
-    elseif ρ_proj > abs(R₁ - R₂)
-        return PartialEclipse
-    elseif ustrip(ρ_proj) ≥ 0
-        if R₁ > R₂                  # primary is larger
-            if ustrip(z) > 0                # secondary is in front
-                return AnnularEclipse
-            else                    # primary is in front
-                return TotalEclipse
-            end
-        elseif R₁ < R₂              # secondary is larger
-            if ustrip(z) < 0                # primary is in front
-                return AnnularEclipse
-            else                    # secondary is in front
-                return TotalEclipse
-            end
-
-        # if primary and secondary are same size with no separation
-        # (if it had separation it would have been partial)
-        else
-            return TotalEclipse
-        end
-    else
-        error("Unexpected value of ρ_proj: $ρ_proj")
-    end
-end
-
-function get_eclipse_types(b ::Binary)
-    R₁ = get_pradius(b)
-    R₂ = get_sradius(b)
-    ω = get_ω(b)
-
-    ν1 = 270° - ω
-    ν2 = 90° - ω
-    x,y,z1 = get_sky_pos(b,ν1)
-    ρ_proj1 = sqrt(x^2+y^2)
-
-    x,y,z2 = get_sky_pos(b,ν2)
-    ρ_proj2 = sqrt(x^2+y^2)
-
-    sign(z1)*sign(z2) == -1 || error("Did not detect a sign change in projection depths!\n",
-                                     "z1 = ", z1, "\n",
-                                     "z2 = ", z2
-                                    )
-
-    if sign(z1) == 1    # at ν1 secondary is in front
-        peclipse_type = get_eclipse_type(R₁, R₂, ρ_proj1, z1)
-        seclipse_type = get_eclipse_type(R₁, R₂, ρ_proj2, z2)
-    else                # at ν1 primary is in front
-        peclipse_type = get_eclipse_type(R₁, R₂, ρ_proj2, z2)
-        seclipse_type = get_eclipse_type(R₁, R₂, ρ_proj1, z1)
-    end
-    return (peclipse_type, seclipse_type)
-end
+#
+#abstract type AbstractEclipse end
+#
+#"""
+#    NoEclipse()
+#"""
+#struct NoEclipse <:AbstractEclipse end
+#
+#"""
+#    PartialEclipse(ν1 ::Angle, ν2 ::Angle)
+#
+#ν1 is true anomaly of first contact
+#ν2 is true anomaly of last contact
+#"""
+#struct PartialEclipse <:AbstractEclipse
+#    ν1 ::Angle
+#    ν2 ::Angle
+#end
+#
+#"""
+#    TotalEclipse(ν1 ::Angle, ν2 ::Angle, ν3 ::Angle, ν4 ::Angle)
+#
+#ν1 is true anomaly of first contact
+#ν2 is true anomaly of second contact
+#ν3 is true anomaly of third contact
+#ν4 is true anomaly of last contact
+#"""
+#struct TotalEclipse <:AbstractEclipse
+#    ν1 ::Angle
+#    ν2 ::Angle
+#    ν3 ::Angle
+#    ν4 ::Angle
+#end
+#
+#"""
+#    AnnularEclipse(ν1 ::Angle, ν2 ::Angle, ν3 ::Angle, ν4 ::Angle)
+#
+#ν1 is true anomaly of first contact
+#ν2 is true anomaly of second contact
+#ν3 is true anomaly of third contact
+#ν4 is true anomaly of last contact
+#"""
+#struct AnnularEclipse <:AbstractEclipse
+#    ν1 ::Angle
+#    ν2 ::Angle
+#    ν3 ::Angle
+#    ν4 ::Angle
+#end
+#
+#struct EclipsingBinary{E1 <:AbstractEclipse, E2 <:AbstractEclipse}
+#    binary ::Binary
+#    pri_eclipse ::E1
+#    sec_eclipse ::E2
+#end
+#
+#"""
+#eclipse_morph_at_ν
+#
+#S₁ is the center of star 1
+#    ---) is the radius of star 1
+#S₂ is the center of star 2
+#    (--- is the radius of star 2
+#
+#0 - no eclipse
+#[-----ρ----]
+#S₁---)
+#      (---S₂
+#ρ >= S₁.r + S₂.r
+#
+#2 - annular or total
+#[---ρ---]
+#S₁----------)
+#   (---S₂---)
+#if R is the larger radius and r is the smaller
+#then a total or annular eclipse happens when R >= ρ+r
+#which can be rewritten as ρ <= R - r
+#R - r = abs(S₁.r - S₂.r)
+#ρ <= abs(S₁.r - S₂.r)
+#
+#1 - partial eclipse
+#[---------ρ---------]
+#S₁----------)
+#           (---S₂---)
+#abs(S₁.r - S₂.r) < ρ < S₁.r + S₂.r
+#"""
+#function get_eclipse_type(R₁ ::Length, R₂ ::Length, ρ_proj ::Length, z ::Length)
+#    if ρ_proj ≥ R₁ + R₂
+#        return NoEclipse
+#    elseif ρ_proj > abs(R₁ - R₂)
+#        return PartialEclipse
+#    elseif ustrip(ρ_proj) ≥ 0
+#        if R₁ > R₂                  # primary is larger
+#            if ustrip(z) > 0                # secondary is in front
+#                return AnnularEclipse
+#            else                    # primary is in front
+#                return TotalEclipse
+#            end
+#        elseif R₁ < R₂              # secondary is larger
+#            if ustrip(z) < 0                # primary is in front
+#                return AnnularEclipse
+#            else                    # secondary is in front
+#                return TotalEclipse
+#            end
+#
+#        # if primary and secondary are same size with no separation
+#        # (if it had separation it would have been partial)
+#        else
+#            return TotalEclipse
+#        end
+#    else
+#        error("Unexpected value of ρ_proj: $ρ_proj")
+#    end
+#end
+#
+#function get_eclipse_types(b ::Binary)
+#    R₁ = get_pradius(b)
+#    R₂ = get_sradius(b)
+#    ω = get_ω(b)
+#
+#    ν1 = 270° - ω
+#    ν2 = 90° - ω
+#    x,y,z1 = get_sky_pos(b,ν1)
+#    ρ_proj1 = sqrt(x^2+y^2)
+#
+#    x,y,z2 = get_sky_pos(b,ν2)
+#    ρ_proj2 = sqrt(x^2+y^2)
+#
+#    sign(z1)*sign(z2) == -1 || error("Did not detect a sign change in projection depths!\n",
+#                                     "z1 = ", z1, "\n",
+#                                     "z2 = ", z2
+#                                    )
+#
+#    if sign(z1) == 1    # at ν1 secondary is in front
+#        peclipse_type = get_eclipse_type(R₁, R₂, ρ_proj1, z1)
+#        seclipse_type = get_eclipse_type(R₁, R₂, ρ_proj2, z2)
+#    else                # at ν1 primary is in front
+#        peclipse_type = get_eclipse_type(R₁, R₂, ρ_proj2, z2)
+#        seclipse_type = get_eclipse_type(R₁, R₂, ρ_proj1, z1)
+#    end
+#    return (peclipse_type, seclipse_type)
+#end
 
 # primary in front secondary in back
 #    (z1 < 0) && (z2 > 0) && return eclip1
