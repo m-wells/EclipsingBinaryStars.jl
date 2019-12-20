@@ -86,9 +86,11 @@ end
 Base.show(io::IO, eb::EclipsingBinary) = printfields(io, eb)
 Base.show(io::IO, ::MIME"text/plain", eb::EclipsingBinary) = print(io, typeof(eb), eb)
 
-get_pri(eb::EclipsingBinary) = get_pri(eb.bin)
-get_sec(eb::EclipsingBinary) = get_sec(eb.bin)
-get_orbit(eb::EclipsingBinary) = get_orbit(eb.bin)
+get_bin(eb::EclipsingBinary) = eb.bin
+
+get_pri(eb::EclipsingBinary) = get_pri(get_bin(eb))
+get_sec(eb::EclipsingBinary) = get_sec(get_bin(eb))
+get_orbit(eb::EclipsingBinary) = get_orbit(get_bin(eb))
 
 get_pri_eclipse(eb::EclipsingBinary) = eb.pri_mid_eclipse
 get_sec_eclipse(eb::EclipsingBinary) = eb.sec_mid_eclipse
@@ -101,13 +103,15 @@ get_sec_eclipse_ρ(eb) = get_ρ(get_sec_eclipse(eb))
 get_sec_eclipse_zsign(eb) = get_zsign(get_sec_eclipse(eb))
 get_sec_eclipse_eflag(eb) = get_eflag(get_sec_eclipse(eb))
 
+get_eclipse_eflags(eb) = (get_pri_eclipse_eflag(eb), get_sec_eclipse_eflag(eb))
+
 has_pri_eclipse(eb) = get_pri_eclipse_eflag(eb) != 0
 has_sec_eclipse(eb) = get_sec_eclipse_eflag(eb) != 0
 has_eclipse(eb) = has_pri_eclipse(eb) || has_sec_eclipse(eb)
 
 ############################################################################################
 
-function _eclipse_duration(eb::EclipsingBinary, ν_conj::Angle)
+function _eclipse_duration(eb::EclipsingBinary{T}, ν_conj::Angle) where T
     R₁ = get_pradius(eb)
     R₂ = get_sradius(eb)
     f(ν) = ustrip(Rsun, R₁ + R₂ - proj_sep(eb, ν))
@@ -124,18 +128,20 @@ function _eclipse_duration(eb::EclipsingBinary, ν_conj::Angle)
         ν1 = $ν1, ν_conj = $ν_conj, ν2 = $ν2
         """
        )
-    return time_btw_true_anoms(ν1,ν2,eb)
+    return unit_convert(T, d, time_btw_true_anoms(ν1,ν2,eb))
 end
 
-function pri_eclipse_duration(eb)
-    get_pri_eclipse_eflag(eb) == 0 && error("unable to compute duration because no eclipse")
+function pri_eclipse_duration(eb::EclipsingBinary{T}) where T
+    get_pri_eclipse_eflag(eb) == 0 && return T(0)*d
     return _eclipse_duration(eb, superior_conj(eb))
 end
 
-function sec_eclipse_duration(eb)
-    get_sec_eclipse_eflag(eb) == 0 && error("unable to compute duration because no eclipse")
+function sec_eclipse_duration(eb::EclipsingBinary{T}) where T
+    get_sec_eclipse_eflag(eb) == 0 && return T(0)*d
     return _eclipse_duration(eb, inferior_conj(eb))
 end
+
+eclipse_durations(eb) = (pri_eclipse_duration(eb), sec_eclipse_duration(eb))
 
 ############################################################################################
 
@@ -189,4 +195,13 @@ function visible_frac(b::Binary{T}, e::Eclipse{T}) where T
     end
 
     error("unknown eclipse type")
+end
+
+function min_visible_frac(eb::EclipsingBinary{T}) where T
+    b = get_bin(eb)
+    e1 = get_pri_eclipse(eb)
+    e2 = get_sec_eclipse(eb)
+    vfrac1 = visible_frac(b,e1)[1]
+    vfrac2 = visible_frac(b,e2)[2]
+    return (vfrac1,vfrac2)
 end

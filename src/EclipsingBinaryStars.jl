@@ -3,8 +3,8 @@ module EclipsingBinaryStars
 export Star, Orbit, Binary, Eclipse, EclipsingBinary
 export Msun, Rsun, AU, °, d
 export has_pri_eclipse, has_sec_eclipse, has_eclipse
-export pri_eclipse_duration, sec_eclipse_duration
-export visible_frac
+export eclipse_durations
+export visible_frac, min_visible_frac
 
 using ForwardDiff
 
