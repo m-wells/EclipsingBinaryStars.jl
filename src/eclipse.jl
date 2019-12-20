@@ -77,6 +77,7 @@ struct EclipsingBinary{T} <:AbstractBinary{T}
     function EclipsingBinary(b::Binary{T}) where T
         pri_mid_eclipse = get_pri_eclipse(b)
         sec_mid_eclipse = get_sec_eclipse(b)
+
         new{T}(b,pri_mid_eclipse,sec_mid_eclipse)
     end
 

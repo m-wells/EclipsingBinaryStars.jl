@@ -5,7 +5,21 @@ struct Binary{T} <:AbstractBinary{T}
     sec ::Star{T}
     orb ::Orbit{T}
 
-    Binary(pri::Star{T}, sec::Star{T}, orb::Orbit{T}) where T = new{T}(pri,sec,orb)
+    function Binary(pri::Star{T}, sec::Star{T}, orb::Orbit{T}) where T
+        R₁ = get_radius(pri)
+        R₂ = get_radius(sec)
+        peri = orb_sep(orb, 0°)
+        sumradicheck = uconvert(NoUnits, (R₁+R₂)/peri)
+        sumradicheck < 1 || error("""
+            The stars are touching!
+            pri = $pri
+            sec = $sec
+            orb = $orb
+            (R₁+R₂)/peri = $sumradicheck
+            """
+           )
+        new{T}(pri,sec,orb)
+    end
 
     Binary(pri::Star, sec::Star, orb::Orbit) = Binary(promote(pri,sec)..., orb)
 
