@@ -1,21 +1,12 @@
 module EclipsingBinaryStars
 
-#export Star, Orbit, Binary, getBinary, eclipse_morph_at_ν, eclipse_morphs,
-#    EclipseType, frac_visible_area, undergo_rlof, get_time_btw_νs
-#export Star, Orbit, Binary
-#export get_orb, get_a, get_P, get_ε, get_i, get_ω
-#export zams_mass, zams_radius, zams_luminosity
-
 export Star, Orbit, Binary, Eclipse, EclipsingBinary
 export Msun, Rsun, AU, °, d
-
-export visible_frac
-export mean2eccn_anom, eccn2mean_anom
-export eccn2true_anom, true2eccn_anom
-export true2mean_anom, mean2true_anom
-export time_btw_true_anoms
+export has_pri_eclipse, has_sec_eclipse, has_eclipse
 export pri_eclipse_duration, sec_eclipse_duration
+export visible_frac
 
+using ForwardDiff
 
 using Unitful
 using Unitful: Quantity, NoDims, FreeUnits, NoUnits
@@ -25,8 +16,6 @@ using Unitful: uconvert, ustrip, dimension, unit
 
 using UnitfulAstro: Msun, Rsun, Lsun, AU, GMsun
 
-#using Roots
-using ForwardDiff
 
 ############################################################################################
 # Convenience

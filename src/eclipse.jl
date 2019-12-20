@@ -13,6 +13,7 @@ end
 _zsign(z) = convert(Int8, sign(z))
 
 """
+eflag values
 0 no eclipse
 1 shallow eclipse
 2 deep eclipse
@@ -20,8 +21,8 @@ _zsign(z) = convert(Int8, sign(z))
 4 total eclipse
 """
 struct Eclipse{T}
-    ρ :: Quantity{T,𝐋,typeof(AU)}
-    zsign :: Int8
+    ρ :: Quantity{T,𝐋,typeof(AU)}   # useful for visible_frac computation
+    zsign :: Int8                   # useful for visible_frac computation
     eflag :: Int8
 
     function Eclipse(ρ::Quantity{T,𝐋,typeof(AU)}, zsign::Int8, eflag::Int8) where T
@@ -65,8 +66,8 @@ Base.show(io::IO, ::MIME"text/plain", e::Eclipse) = print(io, typeof(e), e)
 
 ############################################################################################
 
-get_pri_mid_eclipse(b::Binary) = Eclipse(b, superior_conj(b))
-get_sec_mid_eclipse(b::Binary) = Eclipse(b, inferior_conj(b))
+get_pri_eclipse(b::Binary) = Eclipse(b, superior_conj(b))
+get_sec_eclipse(b::Binary) = Eclipse(b, inferior_conj(b))
 
 struct EclipsingBinary{T} <:AbstractBinary{T}
     bin::Binary{T}
@@ -74,8 +75,8 @@ struct EclipsingBinary{T} <:AbstractBinary{T}
     sec_mid_eclipse::Eclipse{T}
 
     function EclipsingBinary(b::Binary{T}) where T
-        pri_mid_eclipse = get_pri_mid_eclipse(b)
-        sec_mid_eclipse = get_sec_mid_eclipse(b)
+        pri_mid_eclipse = get_pri_eclipse(b)
+        sec_mid_eclipse = get_sec_eclipse(b)
         new{T}(b,pri_mid_eclipse,sec_mid_eclipse)
     end
 
@@ -100,6 +101,10 @@ get_sec_eclipse_ρ(eb) = get_ρ(get_sec_eclipse(eb))
 get_sec_eclipse_zsign(eb) = get_zsign(get_sec_eclipse(eb))
 get_sec_eclipse_eflag(eb) = get_eflag(get_sec_eclipse(eb))
 
+has_pri_eclipse(eb) = get_pri_eclipse_eflag(eb) != 0
+has_sec_eclipse(eb) = get_sec_eclipse_eflag(eb) != 0
+has_eclipse(eb) = has_pri_eclipse(eb) || has_sec_eclipse(eb)
+
 ############################################################################################
 
 function _eclipse_duration(eb::EclipsingBinary, ν_conj::Angle)
@@ -107,8 +112,10 @@ function _eclipse_duration(eb::EclipsingBinary, ν_conj::Angle)
     R₂ = get_sradius(eb)
     f(ν) = ustrip(Rsun, R₁ + R₂ - proj_sep(eb, ν))
     g(ν) = ForwardDiff.derivative(f,ν)
-    ν_low = ν_conj - asin(uconvert(NoUnits, (R₁+R₂)/orb_sep(eb, 0°)))
-    ν_hgh = ν_conj + asin(uconvert(NoUnits, (R₁+R₂)/orb_sep(eb, 0°)))
+
+    # decent starting points make a big difference
+    ν_low = ν_conj - asin(uconvert(NoUnits, (R₁+R₂)/orb_sep(eb, ν_conj)))
+    ν_hgh = ν_conj + asin(uconvert(NoUnits, (R₁+R₂)/orb_sep(eb, ν_conj)))
     
     ν1 = uconvert(°,newton(f,g,ν_low))
     ν2 = uconvert(°,newton(f,g,ν_hgh))
@@ -121,11 +128,13 @@ function _eclipse_duration(eb::EclipsingBinary, ν_conj::Angle)
 end
 
 function pri_eclipse_duration(eb)
-    _eclipse_duration(eb, superior_conj(eb))
+    get_pri_eclipse_eflag(eb) == 0 && error("unable to compute duration because no eclipse")
+    return _eclipse_duration(eb, superior_conj(eb))
 end
 
 function sec_eclipse_duration(eb)
-    _eclipse_duration(eb, inferior_conj(eb))
+    get_sec_eclipse_eflag(eb) == 0 && error("unable to compute duration because no eclipse")
+    return _eclipse_duration(eb, inferior_conj(eb))
 end
 
 ############################################################################################
@@ -142,7 +151,7 @@ _Δarea(R, r, ρ) = _circular_segment(R,r,ρ) + _circular_segment(r,R,ρ)
 """
     visible_frac(b::Binary{T}, e::Eclipse{T}) where T
 
-Assuming spherical stars
+Assuming uniform disks
 """
 function visible_frac(b::Binary{T}, e::Eclipse{T}) where T
     eflag = get_eflag(e)
