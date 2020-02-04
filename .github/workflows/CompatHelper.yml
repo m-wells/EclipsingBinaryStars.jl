@@ -1,6 +1,9 @@
 name: CompatHelper
 
 on:
+  push:
+    branches: 
+      - master
   schedule:
     - cron: '00 00 * * *'
 
