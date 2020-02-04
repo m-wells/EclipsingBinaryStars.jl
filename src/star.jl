@@ -6,16 +6,17 @@ abstract type AbstractStar{T} end
 Create a star with mass of `m` and radius of `r`.
 """
 struct Star{T} <: AbstractStar{T}
-    m::Quantity{T,𝐌,typeof(Msun)}
-    r::Quantity{T,𝐋,typeof(Rsun)}
+    m::Msun{T}
+    r::Rsun{T}
 
-    function Star(m::Quantity{T,𝐌,typeof(Msun)},
-                  r::Quantity{T,𝐋,typeof(Rsun)}
-                 ) where T<:Real
-        new{T}(m,r)
+    Star(m::Msun{T}, r::Rsun{T}) where T<:Real = new{T}(m,r)
+
+    function Star(m::Msun{T1}, r::Rsun{T2}) where {T1,T2}
+        T = promote_type(T1,T2)
+        Star(convert(Msun{T}, m), convert(Rsun{T}, r))
     end
 
-    Star(m::Mass, r::Length) = Star(promote(unit_convert(Msun,m), unit_convert(Rsun,r))...)
+    Star(m::Mass, r::Length) = Star(unit_convert(u"Msun",m), unit_convert(u"Rsun",r))
 end
 
 get_mass(s::Star) = s.m
@@ -23,9 +24,9 @@ get_radius(s::Star) = s.r
 
 Base.promote_rule(::Type{Star{T}}, ::Type{Star{S}}) where {T<:Real,S<:Real} = Star{promote_type(T,S)}
 
-function Base.convert(::Type{Star{T}}, x::Star{S}) where {T,S}
-    return Star(unit_convert(T, Msun, get_mass(x)),
-                unit_convert(T, Rsun, get_radius(x)))
+function Base.convert(::Type{Star{T}}, s::Star{S}) where {T,S}
+    return Star(unit_convert(T, u"Msun", s.m),
+                unit_convert(T, u"Rsun", s.r))
 end
 
 Base.show(io::IO, s::Star) = printfields(io, s)

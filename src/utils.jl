@@ -1,14 +1,22 @@
+double(x::Quantity{T,D,U}) where {T,D,U} = convert(Quantity{DoubleFloat{T},D,U}, x)
+halve(x::Quantity{DoubleFloat{T},D,U}) where {T,D,U} = convert(Quantity{T,D,U}, x)
+
 numtype(::Quantity{T,D,U}) where {T,D,U} = T
 numtype(::T) where T<:Real = T
-
-ret_type(x::Vararg) = promote_type(numtype.(x)...)
+promote_numtype(x::Vararg) = promote_type(numtype.(x)...)
+#ret_type(x::Vararg) = promote_type(numtype.(x)...)
 
 compact(x) = sprint(print, x; context=:compact=>true)
 
-_fieldnames(::T) where T = fieldnames(T)
+#_fieldnames(::T) where T = fieldnames(T)
+
+
+#function unit_convert(::Type{T}, u::U, x::Quantity{T,D,U}) where {T,D,U}
+#    return convert(typeof(one(T)*u), x)
+#end
 
 function unit_convert(::Type{T}, u::FreeUnits, x::Quantity) where T
-    return convert(typeof(one(T)*u), x)
+    return convert(typeof(one(T)*u), uconvert(u, x))
 end
 
 unit_convert(u::FreeUnits, x::Quantity{T,D,U}) where {T,D,U} = unit_convert(T, u, x)
@@ -23,7 +31,7 @@ function printfields(io::IO, obj::T, toplevel=true) where T
 
     toplevel && print(io, "(")
 
-    for (i,k) in enumerate(_fieldnames(obj))
+    for (i,k) in enumerate(fieldnames(T))
         v = getfield(obj,k)
 
         if nfields(v) > 1

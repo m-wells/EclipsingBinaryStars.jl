@@ -1,31 +1,27 @@
 module EclipsingBinaryStars
 
 export Star, Orbit, Binary, Eclipse, EclipsingBinary
-export Msun, Rsun, AU, °, d
 export has_pri_eclipse, has_sec_eclipse, has_eclipse
 export eclipse_durations
 export visible_frac, min_visible_frac
+export kepler3
 
+using DoubleFloats
 using ForwardDiff
 
 using Unitful
-using Unitful: Quantity, NoDims, FreeUnits, NoUnits
-using Unitful: 𝐌, Mass, 𝐋, Length, 𝐓, Time, Power
-using Unitful: °, rad, d
-using Unitful: uconvert, ustrip, dimension, unit
+using UnitfulAstro
 
-using UnitfulAstro: Msun, Rsun, Lsun, AU, GMsun
+using Unitful: Length, Mass, Power, Time, FreeUnits
 
-
-############################################################################################
-# Convenience
-
-@derived_dimension GravMass dimension(1GMsun)
-
-const Angle{T} = Union{Quantity{T, NoDims, typeof(°)}, Quantity{T, NoDims, typeof(rad)}}
-const LengthOrTime{T} = Union{Length{T}, Time{T}}
-
-############################################################################################
+const AU{T} = Quantity{T,dimension(u"AU"),typeof(u"AU")}
+const Days{T} = Quantity{T,dimension(u"d"),typeof(u"d")}
+const Msun{T} = Quantity{T,dimension(u"Msun"),typeof(u"Msun")}
+const Rsun{T} = Quantity{T,dimension(u"Rsun"),typeof(u"Rsun")}
+const GMsun{T} = Quantity{T,dimension(u"GMsun"),typeof(u"GMsun")}
+const Degree{T} = Quantity{T,dimension(u"°"),typeof(u"°")}
+const Radian{T} = Quantity{T,dimension(u"rad"), typeof(u"rad")}
+const Angle{T} = Union{Degree{T}, Radian{T}}
 
 include("./utils.jl")
 include("./solver.jl")
@@ -38,5 +34,5 @@ include("./projection.jl")
 include("./eclipse.jl")
 #include("detached.jl")
 
-include("./plot_recipes.jl")
+#include("./plot_recipes.jl")
 end

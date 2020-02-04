@@ -1,12 +1,16 @@
 function _eflag(ρ::Length, R₁::Length, R₂::Length, zsign::Int8)
-    ρ > (R₁ + R₂) && return Int8(0)
+    dρ = double(ρ)
+    dR₁ = double(R₁)
+    dR₂ = double(R₂)
 
-    ρ > √(abs(R₁^2 - R₂^2)) && return Int8(1)
+    dρ > (dR₁ + dR₂) && return Int8(0)
 
-    ρ > abs(R₁ - R₂) && return Int8(2)
+    dρ > √(abs(dR₁^2 - dR₂^2)) && return Int8(1)
 
-    (zsign > 0) && return R₁ > R₂ ? Int8(3) : Int8(4)
-    (zsign < 0) && return R₂ > R₁ ? Int8(3) : Int8(4)
+    dρ > abs(dR₁ - dR₂) && return Int8(2)
+
+    (zsign > 0) && return dR₁ > dR₂ ? Int8(3) : Int8(4)
+    (zsign < 0) && return dR₂ > dR₁ ? Int8(3) : Int8(4)
     error("unknown eclipse geometry")
 end
 
@@ -21,20 +25,20 @@ eflag values
 4 total eclipse
 """
 struct Eclipse{T}
-    ρ :: Quantity{T,𝐋,typeof(AU)}   # useful for visible_frac computation
-    zsign :: Int8                   # useful for visible_frac computation
+    ρ :: AU{T}          # useful for visible_frac computation
+    zsign :: Int8       # useful for visible_frac computation
     eflag :: Int8
 
-    function Eclipse(ρ::Quantity{T,𝐋,typeof(AU)}, zsign::Int8, eflag::Int8) where T
+    function Eclipse(ρ::AU{T}, zsign::Int8, eflag::Int8) where T
         new{T}(ρ,zsign,eflag)
     end
 
     function Eclipse(b::Binary{T}, ν::Angle) where T
         x,y,z = get_sky_pos(b,ν)
-        ρ = unit_convert(T, AU, proj_sep(x,y))
+        ρ = unit_convert(T, u"AU", proj_sep(x,y))
         zsign = _zsign(z)
-        R₁ = get_pradius(b)
-        R₂ = get_sradius(b)
+        R₁ = get_priradius(b)
+        R₂ = get_secradius(b)
         eflag = _eflag(ρ,R₁,R₂,zsign)
         Eclipse(ρ,zsign,eflag)
     end
@@ -45,7 +49,7 @@ get_zsign(e::Eclipse) = e.zsign
 get_eflag(e::Eclipse) = e.eflag
 
 function Base.convert(::Type{Eclipse{T}}, e::Eclipse{S}) where {T,S}
-    return Eclipse(unit_convert(T, AU, get_ρ(e)), get_zsign(e), get_eflag(e))
+    return Eclipse(unit_convert(T, u"AU", get_ρ(e)), get_zsign(e), get_eflag(e))
 end
 
 function _flag_string(flag::Int8)
@@ -113,32 +117,32 @@ has_eclipse(eb) = has_pri_eclipse(eb) || has_sec_eclipse(eb)
 ############################################################################################
 
 function _eclipse_duration(eb::EclipsingBinary{T}, ν_conj::Angle) where T
-    R₁ = get_pradius(eb)
-    R₂ = get_sradius(eb)
-    f(ν) = ustrip(Rsun, R₁ + R₂ - proj_sep(eb, ν))
+    R₁ = get_priradius(eb)
+    R₂ = get_secradius(eb)
+    f(ν) = ustrip(u"Rsun", R₁ + R₂ - proj_sep(eb, ν))
     g(ν) = ForwardDiff.derivative(f,ν)
 
     # decent starting points make a big difference
     ν_low = ν_conj - asin(uconvert(NoUnits, (R₁+R₂)/orb_sep(eb, ν_conj)))
     ν_hgh = ν_conj + asin(uconvert(NoUnits, (R₁+R₂)/orb_sep(eb, ν_conj)))
     
-    ν1 = uconvert(°,newton(f,g,ν_low))
-    ν2 = uconvert(°,newton(f,g,ν_hgh))
+    ν1 = uconvert(u"°",newton(f,g,ν_low))
+    ν2 = uconvert(u"°",newton(f,g,ν_hgh))
     ν1 < ν_conj < ν2 || error("""
         requirement 'ν1 < ν_conj < ν2' not satisfied
         ν1 = $ν1, ν_conj = $ν_conj, ν2 = $ν2
         """
        )
-    return unit_convert(T, d, time_btw_true_anoms(ν1,ν2,eb))
+    return unit_convert(T, u"d", time_btw_true_anoms(ν1,ν2,eb))
 end
 
 function pri_eclipse_duration(eb::EclipsingBinary{T}) where T
-    get_pri_eclipse_eflag(eb) == 0 && return T(0)*d
+    get_pri_eclipse_eflag(eb) == 0 && return T(0)*u"d"
     return _eclipse_duration(eb, superior_conj(eb))
 end
 
 function sec_eclipse_duration(eb::EclipsingBinary{T}) where T
-    get_sec_eclipse_eflag(eb) == 0 && return T(0)*d
+    get_sec_eclipse_eflag(eb) == 0 && return T(0)*u"d"
     return _eclipse_duration(eb, inferior_conj(eb))
 end
 
@@ -146,10 +150,8 @@ eclipse_durations(eb) = (pri_eclipse_duration(eb), sec_eclipse_duration(eb))
 
 ############################################################################################
 
-_theta_angle(R, r, ρ) = 2*acos(uconvert(NoUnits, (R^2 + ρ^2 - r^2)/(2*R*ρ)))
-
-function _circular_segment(R, r, ρ)
-    θ = _theta_angle(R, r, ρ)
+function _circular_segment(R::Length, r::Length, ρ::Length)
+    θ = 2*acos(uconvert(NoUnits, (R^2 + ρ^2 - r^2)/(2*R*ρ)))
     return R^2 * (θ - sin(θ))/2
 end
 
@@ -164,8 +166,8 @@ function visible_frac(b::Binary{T}, e::Eclipse{T}) where T
     eflag = get_eflag(e)
     eflag == 0 && return (one(T),one(T))
     
-    R₁ = get_pradius(b)
-    R₂ = get_sradius(b)
+    R₁ = double(get_priradius(b))
+    R₂ = double(get_secradius(b))
 
     zsign = get_zsign(e)
     if eflag == 3
@@ -184,7 +186,7 @@ function visible_frac(b::Binary{T}, e::Eclipse{T}) where T
         end
     end
 
-    ρ = get_ρ(e)
+    ρ = double(get_ρ(e))
     ΔA = _Δarea(R₁,R₂,ρ)
 
     if (eflag == 1) || (eflag == 2)
@@ -197,6 +199,8 @@ function visible_frac(b::Binary{T}, e::Eclipse{T}) where T
 
     error("unknown eclipse type")
 end
+
+visible_frac(b::Binary, ν::Angle) = visible_frac(b, Eclipse(b,ν))
 
 function min_visible_frac(eb::EclipsingBinary{T}) where T
     b = get_bin(eb)

@@ -51,7 +51,7 @@ function proj_sep(o, ν::Angle)
     return proj_sep(x,y)
 end
 
-proj_sep(o, ν::Real) = proj_sep(o, ν*rad)
+proj_sep(o, ν::Real) = proj_sep(o, ν*u"rad")
 
 
 """
@@ -61,7 +61,7 @@ Return true anomaly of superior conjunction (primary is at superior conjunction)
 Alignment of system where the secondary is in front of the primary.
 If there is an eclipse it is the midpoint of the eclipse of the primary.
 """
-superior_conj(ω::Angle) = mod(90°-ω, 360°)
+superior_conj(ω::Angle) = mod(90u"°"-ω, 360u"°")
 superior_conj(b) = superior_conj(get_ω(b))
 
 """
@@ -71,7 +71,7 @@ Return true anomaly of inferior conjunction (primary is at inferior conjunction)
 Alignment of system where the primary is in front of the secondary.
 If there is an eclipse it is the midpoint of the eclipse of the secondary.
 """
-inferior_conj(ω::Angle) = mod(270°-ω, 360°)
+inferior_conj(ω::Angle) = mod(270u"°"-ω, 360u"°")
 inferior_conj(b) = inferior_conj(get_ω(b))
 
 ############################################################################################
