@@ -63,7 +63,7 @@ struct Orbit{T}
             instead of ε = $ε
             """
            )
-        (0u"°" ≤ i ≤ 90u"°") || error("""
+        (0u"°" ≤ i ≤ 180u"°") || error("""
             inclination needs to be between 0° and 90°
             instead of i = $i
             """
