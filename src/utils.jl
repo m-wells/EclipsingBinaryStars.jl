@@ -2,11 +2,11 @@ numtype(::Quantity{T,D,U}) where {T,D,U} = T
 numtype(::T) where T<:Real = T
 promote_numtype(x::Vararg) = promote_type(numtype.(x)...)
 
-function unit_convert(::Type{T}, u::FreeUnits, x::Quantity) where T
+function unit_convert(::Type{T}, u::Unitful.FreeUnits, x::Quantity) where T
     return convert(typeof(one(T)*u), uconvert(u, x))
 end
 
-unit_convert(u::FreeUnits, x::Quantity{T,D,U}) where {T,D,U} = unit_convert(T, u, x)
+unit_convert(u::Unitful.FreeUnits, x::Quantity{T,D,U}) where {T,D,U} = unit_convert(T, u, x)
 
 compact(x) = sprint(print, x; context=:compact=>true)
 

@@ -11,10 +11,12 @@ struct Star{T}
 
     function Star(m::Msun{T1}, r::Rsun{T2}) where {T1,T2}
         T = promote_type(T1,T2)
-        Star(convert(Msun{T}, m), convert(Rsun{T}, r))
+        return Star(convert(Msun{T}, m), convert(Rsun{T}, r))
     end
 
-    Star(m::Mass, r::Length) = Star(unit_convert(u"Msun",m), unit_convert(u"Rsun",r))
+    function Star(m::Unitful.Mass, r::Unitful.Length)
+        return Star(unit_convert(u"Msun",m), unit_convert(u"Rsun",r))
+    end
 end
 
 get_m(s::Star) = s.M

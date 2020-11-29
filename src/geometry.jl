@@ -90,3 +90,5 @@ d²Δ²_dν²(ν, b) = d²Δ²_dν²(ν, get_a(b), get_e(b), get_i(b), get_ω(b)
 
 sconj(ω) = 0.5π - ω
 iconj(ω) = 1.5π - ω
+
+periastron(b) = r(0, b)

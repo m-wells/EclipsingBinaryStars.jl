@@ -22,6 +22,9 @@ struct Eclipse{T}
     end
 end
 
+get_eclipse_ν(eclip::Eclipse) = eclip.ν
+has_eclipse(eclip::Eclipse) = !isnan(get_eclipse_ν(eclip))
+
 # assuming r1, r2, and a are given in same units
 function get_eclipses(r1, r2, args...; atol=sqrt(eps()))
     f(x) = Δ²(x, args...) - (r1 + r2)^2
@@ -81,4 +84,23 @@ struct EclipsingBinary{T}
         ν1, ν2 = get_eclipses(b)
         return EclipsingBinary(b, ν1, ν2)
     end
+
+    EclipsingBinary(p::Star, s::Star, x; kwargs...) = EclipsingBinary(Binary(p, s, x; kwargs...))
 end
+
+Base.show(io::IO, b::EclipsingBinary) = printfields(io, b)
+Base.show(io::IO, ::MIME"text/plain", b::EclipsingBinary) = print(io, typeof(b), b)
+
+get_binary(b::EclipsingBinary) = b.bin
+get_star1(b::EclipsingBinary) = get_star1(get_binary(b))
+get_star2(b::EclipsingBinary) = get_star2(get_binary(b))
+get_orbit(b::EclipsingBinary) = get_orbit(get_binary(b))
+get_eclipse1(b::EclipsingBinary) = b.pecl
+get_eclipse2(b::EclipsingBinary) = b.secl
+get_eclipses(b::EclipsingBinary) = get_eclipse1(b), get_eclipse2(b)
+get_eclipse1_ν(b) = get_eclipse_ν(get_eclipse1(b))
+get_eclipse2_ν(b) = get_eclipse_ν(get_eclipse2(b))
+get_eclipses_ν(args...) = get_eclipse_ν.(get_eclipses(args...))
+has_eclipse1(b) = has_eclipse(get_eclipse1(b))
+has_eclipse2(b) = has_eclipse(get_eclipse2(b))
+has_eclipse(b) = has_eclipse1(b) || has_eclipse2(b)

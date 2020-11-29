@@ -48,22 +48,22 @@ struct Orbit{T}
         return new{T}(a, P, e, i, ω, Ω)
     end
 
-    function Orbit(a::Length, P::Time, e::Real, i::Angle, ω::Angle, Ω::Angle)
+    function Orbit(a::Unitful.Length, P::Unitful.Time, e::Real, i::Angle, ω::Angle, Ω::Angle)
         T = promote_numtype(a, P, e, i, ω)
         return Orbit(unit_convert(T, u"AU", a), unit_convert(T, u"d", P), convert(T,e),
                      unit_convert(T,u"°",i), unit_convert(T,u"°",ω), unit_convert(T,u"°",Ω))
     end
 
     Orbit(
-        a::Length,
-        P::Time;
+        a::Unitful.Length,
+        P::Unitful.Time;
         e = 0,
         i::Angle = 0u"°",
         ω::Angle = 0u"°",
         Ω::Angle = 0u"°"
     ) = Orbit(a, P, e, i, ω, Ω)
-    Orbit(x, y, a::Length; kwargs...) = Orbit(a, kepler3(x, y, a); kwargs...)
-    Orbit(x, y, P::Time; kwargs...) = Orbit(kepler3(x, y, P), P; kwargs...)
+    Orbit(P::Unitful.Time, a::Unitful.Length; kwargs...) = Orbit(a, P; kwargs...)
+    Orbit(s1, s2, x; kwargs...) = Orbit(x, kepler3(s1, s2, x); kwargs...)
 end
 
 get_a(o::Orbit) = o.a
