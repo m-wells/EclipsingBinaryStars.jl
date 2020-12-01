@@ -97,14 +97,14 @@ end
 
 reduced_mass(M1, M2) = M1*M2/(M1 + M2)
 
-function pos1(x, M1, M2)
-    μ_M1 = reduced_mass(M1, M2)/M1
-    return -μ_M1.*x
+function pos1(ν, m1, m2, a, e, i, ω, Ω)
+    a = a*reduced_mass(m1, m2)/m1
+    return pos(ν, a, e, i, ω, Ω)
 end
 
-function pos2(x, M1, M2)
-    μ_M2 = reduced_mass(M1, M2)/M2
-    return μ_M2.*x
+function pos2(ν, m1, m2, a, e, i, ω, Ω)
+    a = -a*reduced_mass(m1, m2)/m2
+    return pos(ν, a, e, i, ω, Ω)
 end
 
 function get_xy_zneg(x, y, z)
@@ -200,55 +200,48 @@ function ebs_widget(;
 
     nν = 1000
     νs = range(-ω, stop=(-ω + 2π), length=nν)
-    x, y, z = pos(νs, a, e, i, ω, Ω)
-    #_x = ustrip.(u"Rsun", x)
-    #_y = ustrip.(u"Rsun", y)
     
-    #ax1.set_xlabel("\$x \\ [\\mathrm{a}]\$", ha="right", va="bottom")
-    #ax1.set_ylabel("\$y \\ [\\mathrm{a}]\$", ha="right", va="top")
-
     xmin, xmax = Inf, -Inf
     ymin, ymax = Inf, -Inf
 
     kws = (lw = 1, marker="")
-    _x, _y, _z = pos1((x, y, z), m1, m2)
-    vx, vy = get_xy_zneg(_x, _y, _z)
+    x, y, z = pos1(νs, m1, m2, a, e, i, ω, Ω)
+    vx, vy = get_xy_zneg(x, y, z)
     z1neg, = ax_pos.plot(vx, vy; ls = "dotted", zorder = -10, color = pcolor, kws...)
-    vx, vy = get_xy_zsky(_x, _y, _z)
+    vx, vy = get_xy_zsky(x, y, z)
     z1sky, = ax_pos.plot(vx, vy; ls = "dashed", zorder = 0, color = pcolor, kws...)
-    vx, vy = get_xy_zpos(_x, _y, _z)
+    vx, vy = get_xy_zpos(x, y, z)
     z1pos, = ax_pos.plot(vx, vy; ls="solid", zorder=eps(), color = pcolor, kws...)
-    xmin, xmax = get_minmax(_x, r1, xmin, xmax)
-    ymin, ymax = get_minmax(_y, r1, ymin, ymax)
+    xmin, xmax = get_minmax(x, r1, xmin, xmax)
+    ymin, ymax = get_minmax(y, r1, ymin, ymax)
 
-    _x, _y, _z = pos2((x, y, z), m1, m2)
-    vx, vy = get_xy_zneg(_x, _y, _z)
+    x, y, z = pos2(νs, m1, m2, a, e, i, ω, Ω)
+    vx, vy = get_xy_zneg(x, y, z)
     z2neg, = ax_pos.plot(vx, vy; ls="dotted", zorder=-10, color = scolor, kws...)
-    vx, vy = get_xy_zsky(_x, _y, _z)
+    vx, vy = get_xy_zsky(x, y, z)
     z2sky, = ax_pos.plot(vx, vy; ls="dashed", zorder=0, color = scolor, kws...)
-    vx, vy = get_xy_zpos(_x, _y, _z)
+    vx, vy = get_xy_zpos(x, y, z)
     z2pos, = ax_pos.plot(vx, vy; ls="solid", zorder=eps(), color = scolor, kws...)
-    xmin, xmax = get_minmax(_x, r2, xmin, xmax)
-    ymin, ymax = get_minmax(_y, r2, ymin, ymax)
+    xmin, xmax = get_minmax(x, r2, xmin, xmax)
+    ymin, ymax = get_minmax(y, r2, ymin, ymax)
 
     ax_pos.set_xlim(get_lims(xmin, xmax)...)
     ax_pos.set_ylim(get_lims(ymin, ymax)...)
 
-    x, y, z = pos(ν, a, e, i, ω, Ω)
-    _x, _y, _z = pos1((x, y, z), m1, m2)
+    x, y, z = pos1(ν, m1, m2, a, e, i, ω, Ω)
     pri = ax_pos.add_patch(
         patches.Circle(
-            (_x,_y),
+            (x,y),
             r1,
             facecolor = pcolor,
             edgecolor = "none",
-            zorder = _z
+            zorder = z
         )
     )
-    _x, _y, _z = pos2((x, y, z), m1, m2)
+    x, y, z = pos2(ν, m1, m2, a, e, i, ω, Ω)
     sec = ax_pos.add_patch(
         patches.Circle(
-            (_x,_y),
+            (x,y),
             r2,
             facecolor = scolor,
             edgecolor = "none",
@@ -379,14 +372,13 @@ function ebs_widget(;
         ω = deg2rad(sω.val)
         Ω = deg2rad(sΩ.val)
         
-        x, y, z = pos(ν, a, e, i, ω, Ω)
-        _x, _y, _z = pos1((x, y, z), m1, m2)
-        pri.set_center((_x, _y))
-        pri.set_zorder(_z)
+        x, y, z = pos1(ν, m1, m2, a, e, i, ω, Ω)
+        pri.set_center((x, y))
+        pri.set_zorder(z)
         pri.set_radius(r1)
-        _x, _y, _z = pos2((x, y, z), m1, m2)
-        sec.set_center((_x, _y))
-        sec.set_zorder(_z)
+        x, y, z = pos2(ν, m1, m2, a, e, i, ω, Ω)
+        sec.set_center((x, y))
+        sec.set_zorder(z)
         sec.set_radius(r2)
 
         νlines(_νlines, ν, ω)
@@ -401,33 +393,32 @@ function ebs_widget(;
         a = ustrip(u"Rsun", sa.val*u"AU")
         e = se.val
         i = deg2rad(si.val)
-        ω2 = deg2rad(sω.val)
-        ω1 = ω2 + π
+        ω = deg2rad(sω.val)
         Ω = deg2rad(sΩ.val)
         
         xmin, xmax = Inf, -Inf
         ymin, ymax = Inf, -Inf
 
         νs = range(-ω, stop=(-ω + 2π), length=nν)
-        x, y, z = pos(νs, a, e, i, ω1, Ω)
-        _x, _y, _z = pos1((x, y, z), m1, m2)
-        xmin, xmax = get_minmax(_x, r1, xmin, xmax)
-        ymin, ymax = get_minmax(_y, r1, ymin, ymax)
-        vx, vy = get_xy_zneg(_x, _y, _z)
+
+        x, y, z = pos1(νs, m1, m2, a, e, i, ω, Ω)
+        xmin, xmax = get_minmax(x, r1, xmin, xmax)
+        ymin, ymax = get_minmax(y, r1, ymin, ymax)
+        vx, vy = get_xy_zneg(x, y, z)
         z1neg.set_data(vx, vy)
-        vx, vy = get_xy_zsky(_x, _y, _z)
+        vx, vy = get_xy_zsky(x, y, z)
         z1sky.set_data(vx, vy)
-        vx, vy = get_xy_zpos(_x, _y, _z)
+        vx, vy = get_xy_zpos(x, y, z)
         z1pos.set_data(vx, vy)
-        x, y, z = pos(νs, a, e, i, ω2, Ω)
-        _x, _y, _z = pos2((x, y, z), m1, m2)
-        xmin, xmax = get_minmax(_x, r2, xmin, xmax)
-        ymin, ymax = get_minmax(_y, r2, ymin, ymax)
-        vx, vy = get_xy_zneg(_x, _y, _z)
+
+        x, y, z = pos2(νs, m1, m2, a, e, i, ω, Ω)
+        xmin, xmax = get_minmax(x, r2, xmin, xmax)
+        ymin, ymax = get_minmax(y, r2, ymin, ymax)
+        vx, vy = get_xy_zneg(x, y, z)
         z2neg.set_data(vx, vy)
-        vx, vy = get_xy_zsky(_x, _y, _z)
+        vx, vy = get_xy_zsky(x, y, z)
         z2sky.set_data(vx, vy)
-        vx, vy = get_xy_zpos(_x, _y, _z)
+        vx, vy = get_xy_zpos(x, y, z)
         z2pos.set_data(vx, vy)
 
         update_νonly(nothing)
@@ -444,27 +435,6 @@ function ebs_widget(;
         Δ²secl.set_xdata(νdeg)
         dΔ²secl.set_xdata(νdeg)
         d²Δ²secl.set_xdata(νdeg)
-        #x, y, z = pos(ν₁, a, e, i, ω1, Ω)
-        #_x, _y, _z = pos1((x, y, z), m1, m2)
-        #pecl1.set_center((_x, _y))
-        #pecl1.set_zorder(_z)
-        #pecl1.set_radius(r1)
-        #x, y, z = pos(ν₁, a, e, i, ω2, Ω)
-        #_x, _y, _z = pos2((x, y, z), m1, m2)
-        #secl1.set_center((_x, _y))
-        #secl1.set_zorder(_z)
-        #secl1.set_radius(r2)
-
-        #x, y, z = pos(ν₂, a, e, i, ω1, Ω)
-        #_x, _y, _z = pos1((x, y, z), m1, m2)
-        #pecl2.set_center((_x, _y))
-        #pecl2.set_zorder(_z)
-        #pecl2.set_radius(r1)
-        #x, y, z = pos(ν₂, a, e, i, ω2, Ω)
-        #_x, _y, _z = pos2((x, y, z), m1, m2)
-        #secl2.set_center((_x, _y))
-        #secl2.set_zorder(_z)
-        #secl2.set_radius(r2)
     end
     #
     sm1.on_changed(update)

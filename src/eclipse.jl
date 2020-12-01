@@ -26,16 +26,16 @@ get_eclipse_ν(eclip::Eclipse) = eclip.ν
 has_eclipse(eclip::Eclipse) = !isnan(get_eclipse_ν(eclip))
 
 # assuming r1, r2, and a are given in same units
-function get_eclipses(r1, r2, args...; atol=sqrt(eps()))
-    f(x) = Δ²(x, args...) - (r1 + r2)^2
+function get_eclipses(r1, r2, a, e, i, ω; atol=sqrt(eps()))
+    Δ²(0, a, e, i, π/2) ≥ (r1 + r2)^2 && (return Eclipse(NaN), Eclipse(NaN))
+    f(x) = Δ²(x, a, e, i, ω) - (r1 + r2)^2
     f(x::AbstractArray) = f(first(x))
-    g(x) = dΔ²_dν(x, args...)
+    g(x) = dΔ²_dν(x, a, e, i, ω)
     function g!(xout, xin::AbstractArray)
         xout[1] = g(first(xin))
         return nothing
     end
     
-    ω = args[end]
     x₁ = [-ω]
     x₂ = [π - ω]
     x₃ = [2π - ω]
