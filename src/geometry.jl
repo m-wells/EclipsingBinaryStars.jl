@@ -18,7 +18,7 @@ function pos(ν, a, e, i, ω, Ω)
     return _r.*(
         cosΩ*cosωPν - sinΩ*cosi*sinωPν,
         sinΩ*cosωPν + cosΩ*cosi*sinωPν,
-        -sin(i)*sin(ω + ν)
+        -sin(i)*sinωPν
     )
 end
 

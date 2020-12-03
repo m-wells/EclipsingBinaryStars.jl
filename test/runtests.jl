@@ -44,11 +44,13 @@ end
     s1 = Star(1u"Msun", 1u"Rsun")
     s2 = Star(1u"Msun", 1u"Rsun")
     orb = Orbit(s1, s2, 3u"Rsun")
-    @test valid_periastron(s1, s2, orb)
-    @test_nowarn Binary(s1, s2, orb)
+    @test valid_system(s1, s2, orb)
+    bin = Binary(s1, s2, orb)
+    @test valid_system(bin)
     orb = Orbit(s1, s2, 2.9u"Rsun")
-    @test !valid_periastron(s1, s2, orb)
-    @test_throws ErrorException Binary(s1, s2, orb)
+    @test !valid_system(s1, s2, orb)
+    bin = Binary(s1, s2, orb)
+    @test !valid_system(bin)
 end
 
 @testset "eclipsing" begin

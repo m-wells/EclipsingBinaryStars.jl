@@ -8,25 +8,16 @@
 # """
 struct Eclipse{T}
     ν::Degree{T} # the true anomaly of minimum projected separation
-
-    Eclipse(ν::Degree{T}) where T = new{T}(ν)
-
-    function Eclipse(ν::Angle)
-        ν = uconvert(u"°", ν)
-        return Eclipse(ν)
-    end
-
-    function Eclipse(ν::Real)
-        ν = rad2deg(ν)
-        return Eclipse(ν*u"°")
-    end
 end
+
+Eclipse(ν::Angle) = Eclipse(uconvert(u"°", ν))
+Eclipse(ν::Real) = Eclipse(rad2deg(ν)*u"°")
 
 get_eclipse_ν(eclip::Eclipse) = eclip.ν
 has_eclipse(eclip::Eclipse) = !isnan(get_eclipse_ν(eclip))
 
 # assuming r1, r2, and a are given in same units
-function get_eclipses(r1, r2, a, e, i, ω; atol=sqrt(eps()))
+function get_eclipses(r1::Real, r2::Real, a::Real, e::Real, i::Real, ω::Real; atol=sqrt(eps()))
     Δ²(0, a, e, i, π/2) ≥ (r1 + r2)^2 && (return Eclipse(NaN), Eclipse(NaN))
     f(x) = Δ²(x, a, e, i, ω) - (r1 + r2)^2
     f(x::AbstractArray) = f(first(x))
@@ -36,57 +27,38 @@ function get_eclipses(r1, r2, a, e, i, ω; atol=sqrt(eps()))
         return nothing
     end
     
-    x₁ = [-ω]
-    x₂ = [π - ω]
-    x₃ = [2π - ω]
+    x₁, x₂, x₃ = [-ω], [π - ω], [2π - ω]
+    ν₁, ν₂ = [sconj(ω)], [iconj(ω)]
     
-    ν₁ = sconj(ω)
-    ν₂ = iconj(ω)
-    
-    res = optimize(f, g!, x₁, x₂, [ν₁])
+    res = optimize(f, g!, x₁, x₂, ν₁)
     ν₁ = mod2pi(first(Optim.minimizer(res)))
     ν₁ = (f(ν₁) < 0) && isapprox(g(ν₁), 0; atol=atol) ? ν₁ : NaN
     
-    res = optimize(f, g!, x₂, x₃, [ν₂])
+    res = optimize(f, g!, x₂, x₃, ν₂)
     ν₂ = mod2pi(first(Optim.minimizer(res)))
     ν₂ = (f(ν₂) < 0) && isapprox(g(ν₂), 0; atol=atol) ? ν₂ : NaN
     return Eclipse(ν₁), Eclipse(ν₂)
 end
 
-function get_eclipses(b)
-    get_eclipses(
-        ustrip(u"Rsun", get_r1(b)),
-        ustrip(u"Rsun", get_r2(b)),
-        ustrip(u"Rsun", get_a(b)),
-        get_e(b),
-        ustrip(u"rad", get_i(b)),
-        ustrip(u"rad", get_ω(b))
-    )
-end
+get_eclipses(b) = get_eclipses(
+    ustrip.(u"Rsun", (get_r1(b), get_r2(b), get_a(b)))...,
+    get_e(b),
+    ustrip.(u"rad", (get_i(b), get_ω(b)))...
+)
 
 struct EclipsingBinary{T}
     bin::Binary{T}
     pecl::Eclipse{T}
     secl::Eclipse{T}
-
-    EclipsingBinary(b::Binary{T}, p::Eclipse{T}, s::Eclipse{T}) where T = new{T}(b,p,s)
-
-    function EclipsingBinary(b::Binary{T1}, p::Eclipse{T2}, s::Eclipse{T3}) where {T1,T2,T3}
-        T = promote_type(T1,T2,T3)
-        return EclipsingBinary(
-            convert(Binary{T}, b),
-            convert(Eclipse{T}, p),
-            convert(Eclipse{T}, s)
-        )
-    end
-
-    function EclipsingBinary(b::Binary)
-        ν1, ν2 = get_eclipses(b)
-        return EclipsingBinary(b, ν1, ν2)
-    end
-
-    EclipsingBinary(p::Star, s::Star, x; kwargs...) = EclipsingBinary(Binary(p, s, x; kwargs...))
 end
+
+function EclipsingBinary(b::Binary{T1}, p::Eclipse{T2}, s::Eclipse{T3}) where {T1,T2,T3}
+    T = promote_type(T1,T2,T3)
+    return EclipsingBinary(convert(Binary{T}, b), convert.(Eclipse{T}, (p, s))...)
+end
+
+EclipsingBinary(b::Binary) = EclipsingBinary(b, get_eclipses(b)...)
+EclipsingBinary(p::Star, s::Star, x; kwargs...) = EclipsingBinary(Binary(p, s, x; kwargs...))
 
 Base.show(io::IO, b::EclipsingBinary) = printfields(io, b)
 Base.show(io::IO, ::MIME"text/plain", b::EclipsingBinary) = print(io, typeof(b), b)

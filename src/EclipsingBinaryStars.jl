@@ -3,13 +3,14 @@ module EclipsingBinaryStars
 export Star, Orbit, Binary, EclipsingBinary
 export get_m, get_m1, get_m2, get_r, get_r1, get_r2
 export get_a, get_e, get_i, get_P, get_ω, get_Ω
-export kepler3, periastron, valid_periastron
+export kepler3, periastron, valid_system
 export ebs_widget
 export get_eclipse1_ν, get_eclipse2_ν, get_eclipse_ν, get_eclipse1, get_eclipse2
 export has_eclipse1, has_eclipse2, has_eclipse
 
 using PyPlot
 using Unitful
+using Unitful: Length, Mass, Time
 using UnitfulAstro
 using Optim
 using ForwardDiff

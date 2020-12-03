@@ -1,7 +1,7 @@
 name = "EclipsingBinaryStars"
 uuid = "298f00ba-5fcf-566c-9100-f8b551e1d946"
 authors = ["m-wells"]
-version = "0.4.1"
+version = "0.4.2"
 
 [deps]
 DoubleFloats = "497a8b3b-efae-58df-a0af-a86822472b78"
