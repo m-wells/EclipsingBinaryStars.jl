@@ -10,6 +10,7 @@ function Binary(p::Star{P}, s::Star{S}, o::Orbit{O}) where {P, S, O}
 end
 
 Binary(p::Star, s::Star, x; kwargs...) = Binary(p, s, Orbit(p, s, x; kwargs...))
+Binary(M1, R1, M2, R2, x; kwargs...) = Binary(Star(M1, R1), Star(M2, R2), x; kwargs...)
 
 get_star1(b::Binary) = b.pri
 get_star2(b::Binary) = b.sec

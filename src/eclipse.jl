@@ -17,9 +17,20 @@ get_eclipse_ν(eclip::Eclipse) = eclip.ν
 has_eclipse(eclip::Eclipse) = !isnan(get_eclipse_ν(eclip))
 
 # assuming r1, r2, and a are given in same units
-function get_eclipses(r1::Real, r2::Real, a::Real, e::Real, i::Real, ω::Real; atol=sqrt(eps()))
-    Δ²(0, a, e, i, π/2) ≥ (r1 + r2)^2 && (return Eclipse(NaN), Eclipse(NaN))
-    f(x) = Δ²(x, a, e, i, ω) - (r1 + r2)^2
+#function get_eclipses(r1::Real, r2::Real, a::Real, e::Real, i::Real, ω::Real; atol=sqrt(eps()))
+function get_eclipses(b; atol=sqrt(eps()))
+    a = ustrip(u"Rsun", get_a(b))
+    e = get_e(b)
+    i = ustrip(u"rad", get_i(b))
+    ω = ustrip(u"rad", get_ω(b))
+    r1 = ustrip(u"Rsun", get_r1(b))
+    r2 = ustrip(u"Rsun", get_r2(b))
+    r1r2² = (r1 + r2)^2
+    if (Δ²(0, a, e, i, π/2) ≥ r1r2²) && (Δ²(0, a, e, i, 3π/2) ≥ r1r2²)
+        (return Eclipse(NaN), Eclipse(NaN))
+    end
+    #Δ²(0, a, e, i, π/2) ≥ (r1 + r2)^2 && (return Eclipse(NaN), Eclipse(NaN))
+    f(x) = Δ²(x, a, e, i, ω) - r1r2²
     f(x::AbstractArray) = f(first(x))
     g(x) = dΔ²_dν(x, a, e, i, ω)
     function g!(xout, xin::AbstractArray)
@@ -40,11 +51,11 @@ function get_eclipses(r1::Real, r2::Real, a::Real, e::Real, i::Real, ω::Real; a
     return Eclipse(ν₁), Eclipse(ν₂)
 end
 
-get_eclipses(b) = get_eclipses(
-    ustrip.(u"Rsun", (get_r1(b), get_r2(b), get_a(b)))...,
-    get_e(b),
-    ustrip.(u"rad", (get_i(b), get_ω(b)))...
-)
+#get_eclipses(b) = get_eclipses(
+#    ustrip.(u"Rsun", (get_r1(b), get_r2(b), get_a(b)))...,
+#    get_e(b),
+#    ustrip.(u"rad", (get_i(b), get_ω(b)))...
+#)
 
 struct EclipsingBinary{T}
     bin::Binary{T}
@@ -72,7 +83,7 @@ get_eclipse2(b::EclipsingBinary) = b.secl
 get_eclipses(b::EclipsingBinary) = get_eclipse1(b), get_eclipse2(b)
 get_eclipse1_ν(b) = get_eclipse_ν(get_eclipse1(b))
 get_eclipse2_ν(b) = get_eclipse_ν(get_eclipse2(b))
-get_eclipses_ν(args...) = get_eclipse_ν.(get_eclipses(args...))
+get_eclipses_ν(b) = get_eclipse_ν.(get_eclipses(b))
 has_eclipse1(b) = has_eclipse(get_eclipse1(b))
 has_eclipse2(b) = has_eclipse(get_eclipse2(b))
 has_eclipse(b) = has_eclipse1(b) || has_eclipse2(b)
