@@ -109,7 +109,6 @@ function ebs_widget(;
     pcolor = "tab:orange",
     scolor = "tab:blue",
 )
-    ux, uy, uz = unit_sphere()
 
     r1_rsun = ustrip(u"Rsun", r1)
     r2_rsun = ustrip(u"Rsun", r2)
@@ -217,7 +216,14 @@ function ebs_widget(;
     xmin, xmax = get_lims(xmin, xmax)
     ax_pos.set_xlim(xmin, xmax)
     ax_pos.set_ylim(get_lims(ymin, ymax)...)
-    ax_pos.axvspan(xmin, xmax; facecolor="black", alpha=0.2, zorder=0)
+    ax_pos.add_patch(
+        patches.Rectangle((0,0), 1, 1;
+            transform = ax_pos.transAxes,
+            zorder = 0,
+            color = "black",
+            alpha = 0.2
+        )
+    )
 
     xyz1, xyz2 = pos(ν, b)
     x,y,z = ustrip.(u"Rsun", xyz1)

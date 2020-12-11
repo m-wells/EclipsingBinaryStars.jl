@@ -60,6 +60,9 @@ dΔ²_dν(ν, b) = dΔ²_dν(ν, get_a(b), get_e(b), get_i(b), get_ω(b))
 sconj(ω) = 0.5π - ω
 iconj(ω) = 1.5π - ω
 
+sconj(b::Binary) = sconj(get_ω(b))
+iconj(b::Binary) = iconj(get_ω(b))
+
 periastron(a, e) = r(0, a, e)
 periastron(b) = r(0, b)
 

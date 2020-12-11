@@ -13,49 +13,72 @@ end
 Eclipse(ν::Angle) = Eclipse(uconvert(u"°", ν))
 Eclipse(ν::Real) = Eclipse(rad2deg(ν)*u"°")
 
-get_eclipse_ν(eclip::Eclipse) = eclip.ν
-has_eclipse(eclip::Eclipse) = !isnan(get_eclipse_ν(eclip))
+abstract type Solver end
 
-# assuming r1, r2, and a are given in same units
-#function get_eclipses(r1::Real, r2::Real, a::Real, e::Real, i::Real, ω::Real; atol=sqrt(eps()))
-function get_eclipses(b; atol=sqrt(eps()))
-    a = ustrip(u"Rsun", get_a(b))
-    e = get_e(b)
-    i = ustrip(u"rad", get_i(b))
-    ω = ustrip(u"rad", get_ω(b))
-    r1 = ustrip(u"Rsun", get_r1(b))
-    r2 = ustrip(u"Rsun", get_r2(b))
+struct Fast <: Solver
+end
+export Fast
+
+struct Accurate <: Solver
+end
+export Accurate
+
+function get_eclipses(r1, r2, a, e, i, ω, ::Accurate; atol=sqrt(eps()), νpad=π/12)
+    r1 = ustrip(u"Rsun", r1)
+    r2 = ustrip(u"Rsun", r2)
     r1r2² = (r1 + r2)^2
-    if (Δ²(0, a, e, i, π/2) ≥ r1r2²) && (Δ²(0, a, e, i, 3π/2) ≥ r1r2²)
+    a = ustrip(u"Rsun", a)
+    i = ustrip(u"rad", i)
+    ω = ustrip(u"rad", ω)
+
+    r1r2² = (r1 + r2)^2
+
+    if Δ²(0, a, e, i, π/2) ≥ r1r2² 
         (return Eclipse(NaN), Eclipse(NaN))
     end
-    #Δ²(0, a, e, i, π/2) ≥ (r1 + r2)^2 && (return Eclipse(NaN), Eclipse(NaN))
-    f(x) = Δ²(x, a, e, i, ω) - r1r2²
-    f(x::AbstractArray) = f(first(x))
-    g(x) = dΔ²_dν(x, a, e, i, ω)
-    function g!(xout, xin::AbstractArray)
-        xout[1] = g(first(xin))
-        return nothing
-    end
+
+    f(x) = Δ²(x, a, e, i, ω)
     
-    x₁, x₂, x₃ = [-ω], [π - ω], [2π - ω]
-    ν₁, ν₂ = [sconj(ω)], [iconj(ω)]
-    
-    res = optimize(f, g!, x₁, x₂, ν₁)
-    ν₁ = mod2pi(first(Optim.minimizer(res)))
-    ν₁ = (f(ν₁) < 0) && isapprox(g(ν₁), 0; atol=atol) ? ν₁ : NaN
-    
-    res = optimize(f, g!, x₂, x₃, ν₂)
-    ν₂ = mod2pi(first(Optim.minimizer(res)))
-    ν₂ = (f(ν₂) < 0) && isapprox(g(ν₂), 0; atol=atol) ? ν₂ : NaN
+    x₂ = sconj(ω)
+    x₁ = x₂ - νpad
+
+    res = optimize(f, x₁, x₂)
+    ν₁ = mod2pi(Optim.minimizer(res))
+    ν₁ = f(ν₁) < r1r2² ? ν₁ : NaN
+
+    x₁ = iconj(ω)
+    x₂ = x₁ + νpad
+    res = optimize(f, x₁, x₂)
+    ν₂ = mod2pi(Optim.minimizer(res))
+    ν₂ = f(ν₂) < r1r2² ? ν₂ : NaN
+
     return Eclipse(ν₁), Eclipse(ν₂)
 end
 
-#get_eclipses(b) = get_eclipses(
-#    ustrip.(u"Rsun", (get_r1(b), get_r2(b), get_a(b)))...,
-#    get_e(b),
-#    ustrip.(u"rad", (get_i(b), get_ω(b)))...
-#)
+function get_eclipses(r1, r2, a, e, i, ω, ::Fast)
+    r1 = ustrip(u"Rsun", r1)
+    r2 = ustrip(u"Rsun", r2)
+    a = ustrip(u"Rsun", a)
+    i = ustrip(u"rad", i)
+    ω = ustrip(u"rad", ω)
+
+    cosi = cos(i)
+    sumradi = r1 + r2
+    ν₁ = sconj(ω)
+    ν₁ = abs(r(ν₁, a, e)*cosi) < sumradi ? ν₁ : NaN
+    ν₂ = iconj(ω)
+    ν₂ = abs(r(ν₂, a, e)*cosi) < sumradi ? ν₂ : NaN
+    return Eclipse(ν₁), Eclipse(ν₂)
+end
+
+# default method for get_eclipses is Accurate
+get_eclipses(r1, r2, a, e, i, ω; kwargs...) = get_eclipses(
+    r1, r2, a, e, i, ω, Accurate(); kwargs...
+)
+
+get_eclipses(b, args...; kwargs...) = get_eclipses(
+    get_r1(b), get_r2(b), get_a(b), get_e(b), get_i(b), get_ω(b), args...; kwargs...
+)
 
 struct EclipsingBinary{T}
     bin::Binary{T}
@@ -68,8 +91,10 @@ function EclipsingBinary(b::Binary{T1}, p::Eclipse{T2}, s::Eclipse{T3}) where {T
     return EclipsingBinary(convert(Binary{T}, b), convert.(Eclipse{T}, (p, s))...)
 end
 
-EclipsingBinary(b::Binary) = EclipsingBinary(b, get_eclipses(b)...)
-EclipsingBinary(p::Star, s::Star, x; kwargs...) = EclipsingBinary(Binary(p, s, x; kwargs...))
+EclipsingBinary(b::Binary, args...; kwargs...) = EclipsingBinary(
+    b, get_eclipses(b, args...; kwargs...)...
+)
+EclipsingBinary(args...; kwargs...) = EclipsingBinary(Binary(args...; kwargs...))
 
 Base.show(io::IO, b::EclipsingBinary) = printfields(io, b)
 Base.show(io::IO, ::MIME"text/plain", b::EclipsingBinary) = print(io, typeof(b), b)
@@ -78,12 +103,17 @@ get_binary(b::EclipsingBinary) = b.bin
 get_star1(b::EclipsingBinary) = get_star1(get_binary(b))
 get_star2(b::EclipsingBinary) = get_star2(get_binary(b))
 get_orbit(b::EclipsingBinary) = get_orbit(get_binary(b))
+
 get_eclipse1(b::EclipsingBinary) = b.pecl
 get_eclipse2(b::EclipsingBinary) = b.secl
 get_eclipses(b::EclipsingBinary) = get_eclipse1(b), get_eclipse2(b)
+
+get_eclipse_ν(eclip::Eclipse) = eclip.ν
 get_eclipse1_ν(b) = get_eclipse_ν(get_eclipse1(b))
 get_eclipse2_ν(b) = get_eclipse_ν(get_eclipse2(b))
-get_eclipses_ν(b) = get_eclipse_ν.(get_eclipses(b))
+get_eclipses_ν(b, args...; kwargs...) = get_eclipse_ν.(get_eclipses(b, args...; kwargs...))
+
+has_eclipse(eclip::Eclipse) = !isnan(get_eclipse_ν(eclip))
 has_eclipse1(b) = has_eclipse(get_eclipse1(b))
 has_eclipse2(b) = has_eclipse(get_eclipse2(b))
 has_eclipse(b) = has_eclipse1(b) || has_eclipse2(b)

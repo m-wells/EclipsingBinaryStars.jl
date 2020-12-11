@@ -87,3 +87,54 @@ end
     @test !has_eclipse2(eb)
     @test !has_eclipse(eb)
 end
+
+function _get(xmin, xmax)
+    xmin > xmax && error("xmin > xmax\n\txmin = ", xmin, "\n\txmax = ", xmax)
+    xran = xmax - xmin
+    return rand()*xran + xmin
+end
+
+@testset "accurate versus fast" begin
+    n = 10000
+    
+    rmin = 0.1
+    rmax = 10.0
+    amax = 10000.0
+    mmin = 0.1
+    mmax = 10.0
+    
+    eclips_accurate = falses(n)
+    eclips_fast = falses(n)
+    
+    for j in 1:n
+        m1 = _get(mmin, mmax)u"Msun"
+        m2 = _get(mmin, mmax)u"Msun"
+        r1 = _get(rmin, rmax)u"Rsun"
+        r2 = _get(rmin, rmax)u"Rsun"
+        amin = Inf
+        e = NaN
+        check_e = true
+        while check_e
+            e = _get(0, 1)
+            amin = ustrip(u"Rsun", 1.5*(r1 + r2)/(1-e))
+            check_e = amin > amax
+        end
+        a = _get(amin, amax)u"Rsun"
+        i = _get(0, π)u"rad"
+        ω = _get(0, 2π)u"rad"
+    
+        b = Binary(m1, r1, m2, r2, a; e=e, i=i, ω=ω)
+        eb = EclipsingBinary(b, Fast())
+        eclips_fast[j] = has_eclipse(eb)
+
+        eb = EclipsingBinary(b)
+        eclips_accurate[j] = has_eclipse(eb)
+
+    end
+    @test sum(eclips_accurate) ≥ sum(eclips_fast)
+    mask = xor.(eclips_accurate, eclips_fast)
+    inds = findall(mask)
+
+    @test all(eclips_accurate[inds])
+    @test !any(eclips_fast[inds])
+end
