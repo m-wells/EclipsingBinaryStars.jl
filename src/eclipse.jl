@@ -71,9 +71,9 @@ function get_eclipses(r1, r2, a, e, i, ω, ::Fast)
     return Eclipse(ν₁), Eclipse(ν₂)
 end
 
-# default method for get_eclipses is Accurate
+# set default method for get_eclipses
 get_eclipses(r1, r2, a, e, i, ω; kwargs...) = get_eclipses(
-    r1, r2, a, e, i, ω, Accurate(); kwargs...
+    r1, r2, a, e, i, ω, Fast(); kwargs...
 )
 
 get_eclipses(b, args...; kwargs...) = get_eclipses(

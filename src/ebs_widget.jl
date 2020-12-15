@@ -112,9 +112,15 @@ function ebs_widget(;
 
     r1_rsun = ustrip(u"Rsun", r1)
     r2_rsun = ustrip(u"Rsun", r2)
-    a_rsun = ustrip(u"Rsun", a)
     ν_deg = ustrip(u"°", ν)
+    ν = uconvert(u"rad", ν)
+    a_rsun = ustrip(u"Rsun", a)
+    i_deg = ustrip(u"°", i)
+    i = uconvert(u"rad", i)
     ω_deg = ustrip(u"°", ω)
+    ω = uconvert(u"rad", ω)
+    Ω_deg = ustrip(u"°", Ω)
+    Ω = uconvert(u"rad", Ω)
 
     fig = plt.figure(figsize=(figwidth, figheight), constrained_layout = true)
     gs0 = fig.add_gridspec(    # Define the outer gridspec
@@ -431,3 +437,16 @@ function ebs_widget(;
     
     nothing
 end
+
+ebs_widget(eb::EclipsingBinary; kwargs...) =ebs_widget(;
+    m1 = get_m1(eb),
+    m2 = get_m2(eb),
+    r1 = get_r1(eb),
+    r2 = get_r2(eb),
+    a = get_a(eb),
+    e = get_e(eb),
+    i = get_i(eb),
+    ω = get_ω(eb),
+    Ω = get_Ω(eb),
+    kwargs...
+)
