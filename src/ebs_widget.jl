@@ -10,7 +10,6 @@ const ticker = PC.pynew()
 const widgets = PC.pynew()
 
 function __init__()
-    pygui(true)
     PC.pycopy!(gridspec, PC.pyimport("matplotlib.gridspec"))
     PC.pycopy!(patches, PC.pyimport("matplotlib.patches"))
     PC.pycopy!(ticker, PC.pyimport("matplotlib.ticker"))
