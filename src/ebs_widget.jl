@@ -1,16 +1,20 @@
-using PyCall
+import PythonCall as PC
 
-widgets = PyNULL()
-patches = PyNULL()
-ticker = PyNULL()
-gridspec = PyNULL()
+using PythonPlot: matplotlib as mpl
+using PythonPlot: pygui
+using PythonPlot: pyplot as plt
+
+const gridspec = PC.pynew()
+const patches = PC.pynew()
+const ticker = PC.pynew()
+const widgets = PC.pynew()
 
 function __init__()
     pygui(true)
-    copy!(widgets, matplotlib.widgets)
-    copy!(patches, matplotlib.patches)
-    copy!(ticker, matplotlib.ticker)
-    copy!(gridspec, matplotlib.gridspec)
+    PC.pycopy!(gridspec, PC.pyimport("matplotlib.gridspec"))
+    PC.pycopy!(patches, PC.pyimport("matplotlib.patches"))
+    PC.pycopy!(ticker, PC.pyimport("matplotlib.ticker"))
+    PC.pycopy!(widgets, PC.pyimport("matplotlib.widgets"))
 end
 
 function get_minmax(x::AbstractArray, r, xmin, xmax)
@@ -41,7 +45,7 @@ end
 get_lims(x::AbstractArray; kwargs...) = get_lims(extrema(x)...; kwargs...)
 
 deg_formatter(x) = string("\$", Int(x), "^\\circ{}\$")
-deg_formatter(x, pos) = deg_formatter(x)
+# deg_formatter(x, pos) = deg_formatter(x)
 
 function νlines(ax, ν, ω; lw=1)
     ν_deg = ustrip(u"°", ν)
@@ -71,7 +75,7 @@ function νlines(sep_pos, supconj, infconj, ν, ω)
     return nothing
 end
 
-function νlines(xs::Vector{PyObject}, ν, ω)
+function νlines(xs::Vector{PC.Py}, ν, ω)
     for x in xs
         νlines(x..., ν, ω)
     end
@@ -114,7 +118,7 @@ function ebs_widget(;
     r2_rsun = ustrip(u"Rsun", r2)
     ν_deg = ustrip(u"°", ν)
     ν = uconvert(u"rad", ν)
-    a_rsun = ustrip(u"Rsun", a)
+    # a_rsun = ustrip(u"Rsun", a)
     i_deg = ustrip(u"°", i)
     i = uconvert(u"rad", i)
     ω_deg = ustrip(u"°", ω)
@@ -128,34 +132,34 @@ function ebs_widget(;
         ncols = 2,             # plane of sky on left, separation plots on right
     )
     # separation plots
-    gs1 = py"$gs0[0:2,1].subgridspec(2,1)"
+    gs1 = gs0[0:2,1].subgridspec(2,1)
     # sliders
-    gs2 = py"$gs0[2,:].subgridspec(10,1)"
+    gs2 = gs0[2,:].subgridspec(10,1)
 
-    ax_pos = fig.add_subplot(py"$gs0[0:2,0]")
+    ax_pos = fig.add_subplot(gs0[0:2,0])
     ax_pos.set_aspect("equal")
     ax_pos.set_anchor("W")
     ax_pos.spines["right"].set_position(("data", 0))
     ax_pos.spines["top"].set_position(("data", 0))
 
-    ax_Δ² = fig.add_subplot(py"$gs1[0]")
-    ax_dΔ² = fig.add_subplot(py"$gs1[1]", sharex = ax_Δ²)
-    #ax_d²Δ² = fig.add_subplot(py"$gs1[2]", sharex = ax_Δ²)
+    ax_Δ² = fig.add_subplot(gs1[0])
+    ax_dΔ² = fig.add_subplot(gs1[1], sharex = ax_Δ²)
+    #ax_d²Δ² = fig.add_subplot(gs1[2], sharex = ax_Δ²)
     _xticks = 0:45:360
     ax_Δ².xaxis.set_ticks(_xticks)
     ax_Δ².xaxis.set_ticklabels(deg_formatter.(_xticks))
 
     axcolor = "lightgoldenrodyellow"
-    ax_m1 = fig.add_subplot(py"$gs2[0]", fc = axcolor)
-    ax_r1 = fig.add_subplot(py"$gs2[1]", fc = axcolor)
-    ax_m2 = fig.add_subplot(py"$gs2[2]", fc = axcolor)
-    ax_r2 = fig.add_subplot(py"$gs2[3]", fc = axcolor)
-    ax_ν = fig.add_subplot(py"$gs2[4]", fc = axcolor)
-    ax_a = fig.add_subplot(py"$gs2[5]", fc = axcolor)
-    ax_e = fig.add_subplot(py"$gs2[6]", fc = axcolor)
-    ax_i = fig.add_subplot(py"$gs2[7]", fc = axcolor)
-    ax_ω = fig.add_subplot(py"$gs2[8]", fc = axcolor)
-    ax_Ω = fig.add_subplot(py"$gs2[9]", fc = axcolor)
+    ax_m1 = fig.add_subplot(gs2[0], fc = axcolor)
+    ax_r1 = fig.add_subplot(gs2[1], fc = axcolor)
+    ax_m2 = fig.add_subplot(gs2[2], fc = axcolor)
+    ax_r2 = fig.add_subplot(gs2[3], fc = axcolor)
+    ax_ν = fig.add_subplot(gs2[4], fc = axcolor)
+    ax_a = fig.add_subplot(gs2[5], fc = axcolor)
+    ax_e = fig.add_subplot(gs2[6], fc = axcolor)
+    ax_i = fig.add_subplot(gs2[7], fc = axcolor)
+    ax_ω = fig.add_subplot(gs2[8], fc = axcolor)
+    ax_Ω = fig.add_subplot(gs2[9], fc = axcolor)
     sm1 = widgets.Slider(
         ax_m1, "\$M_1\$", 0.7, 10;
         valinit = ustrip(u"Msun", m1), closedmax=true, valfmt="%4.1f \$M_\\odot\$"
@@ -261,7 +265,7 @@ function ebs_widget(;
     ax_Δ².set_ylabel("\$\\Delta^2 \\ \\left[\\mathrm{R}_\\odot^2\\right]\$")
     fy_rsun = ustrip.(u"Rsun^2", Δ²(νs_sep, b))
     fplot, = ax_Δ².plot(ds_sep, fy_rsun; color="black", kws...)
-    fr1r2 = ax_Δ².axhline((r1_rsun^2 + r2_rsun^2)/a_rsun^2, color="black", ls="dotted")
+    #fr1r2 = ax_Δ².axhline((r1_rsun^2 + r2_rsun^2)/a_rsun^2, color="black", ls="dotted")
     _, fy_max = get_lims(0, maximum(fy_rsun))
     ax_Δ².set_xlim(νmin_deg, νmax_deg)
     ax_Δ².set_ylim(0, fy_max)
@@ -290,8 +294,8 @@ function ebs_widget(;
     #ax_d²Δ².spines["bottom"].set_position(("data", 0))
     
     # current position (in terms of true anomaly, supconj and infconj)
-    _νlines = Vector{PyObject}(undef, 2)
-    _νspans = Vector{PyObject}(undef, 4)
+    _νlines = Vector{PC.Py}(undef, 2)
+    _νspans = Vector{PC.Py}(undef, 4)
     for (j,ax) in enumerate([ax_Δ², ax_dΔ²])
         _νlines[j] = νlines(ax, ν, ω)
         _νspans[j] = ax.axvspan(νmin_deg, 0; color="black", alpha=0.1)
@@ -310,7 +314,8 @@ function ebs_widget(;
     #d²Δ²pecl = ax_d²Δ².axvline(νdeg₁; color=pcolor, kws...)
     #d²Δ²secl = ax_d²Δ².axvline(νdeg₂; color=scolor, kws...)
 
-    function update_νonly(val)
+    #function update_νonly(val)
+    function update_νonly(_)
         m1_msun = sm1.val
         m1 = m1_msun*u"Msun"
         m2_msun = sm2.val
@@ -334,7 +339,7 @@ function ebs_widget(;
         Ω = Ω_deg*u"°"
 
         b = Binary(m1, r1, m2, r2, a; e=e, i=i, ω=ω, Ω=Ω)
-        
+
         xyz1, xyz2 = pos(ν, b)
         x,y,z = ustrip.(u"Rsun", xyz1)
         pri.set_center((x, y))
@@ -348,7 +353,8 @@ function ebs_widget(;
         νlines(_νlines, ν, ω)
     end
 
-    function update(val)
+    #function update(val)
+    function update(_)
         m1_msun = sm1.val
         m1 = m1_msun*u"Msun"
         m2_msun = sm2.val
@@ -372,7 +378,7 @@ function ebs_widget(;
         Ω = Ω_deg*u"°"
 
         b = Binary(m1, r1, m2, r2, a; e=e, i=i, ω=ω, Ω=Ω)
-       
+
         xmin, xmax = Inf, -Inf
         ymin, ymax = Inf, -Inf
 

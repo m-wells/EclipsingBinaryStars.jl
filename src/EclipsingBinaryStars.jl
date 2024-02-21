@@ -8,7 +8,6 @@ export ebs_widget
 export get_eclipse1_ν, get_eclipse2_ν, get_eclipse_ν, get_eclipse1, get_eclipse2
 export has_eclipse1, has_eclipse2, has_eclipse
 
-using PyPlot
 using Unitful
 using Unitful: Length, Mass, Time
 using UnitfulAstro
@@ -24,16 +23,15 @@ const Degree{T} = Quantity{T,dimension(u"°"),typeof(u"°")}
 const Radian{T} = Quantity{T,dimension(u"rad"), typeof(u"rad")}
 const Angle{T} = Union{Degree{T}, Radian{T}}
 
-include(joinpath(@__DIR__, "utils.jl"))
-include(joinpath(@__DIR__, "star.jl"))
-include(joinpath(@__DIR__, "kepler3.jl"))
-include(joinpath(@__DIR__, "orbit.jl"))
-include(joinpath(@__DIR__, "binary.jl"))
-include(joinpath(@__DIR__, "trig.jl"))
-include(joinpath(@__DIR__, "geometry.jl"))
-include(joinpath(@__DIR__, "eclipse.jl"))
-
-include(joinpath(@__DIR__, "ebs_widget.jl"))
+include("./utils.jl")
+include("./star.jl")
+include("./kepler3.jl")
+include("./orbit.jl")
+include("./binary.jl")
+include("./trig.jl")
+include("./geometry.jl")
+include("./eclipse.jl")
+include("./ebs_widget.jl")
 
 #include("./solver.jl")
 #include("./zams.jl")

@@ -23,7 +23,8 @@ struct Accurate <: Solver
 end
 export Accurate
 
-function get_eclipses(r1, r2, a, e, i, ω, ::Accurate; atol=sqrt(eps()), νpad=π/12)
+#function get_eclipses(r1, r2, a, e, i, ω, ::Accurate; atol=sqrt(eps()), νpad=π/12)
+function get_eclipses(r1, r2, a, e, i, ω, ::Accurate; νpad=π/12)
     r1 = ustrip(u"Rsun", r1)
     r2 = ustrip(u"Rsun", r2)
     r1r2² = (r1 + r2)^2
