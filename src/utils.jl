@@ -1,9 +1,9 @@
 numtype(::Quantity{T,D,U}) where {T,D,U} = T
 numtype(::T) where T<:Real = T
 promote_numtype(x...) = promote_type(numtype.(x)...)
-unit_convert(::Type{T}, x::Quantity{S,D,U}) where {T,S,D,U} = convert(Quantity{T,D,U}, x)
-unit_convert(::Type{T}, u::Unitful.FreeUnits, x::Quantity{S,D,U}) where {T,S,D,U} =
-    convert(Quantity{T,D,typeof(u)}, x)
+#unit_convert(::Type{T}, x::Quantity{<:Any,D,U}) where {T,D,U} = convert(Quantity{T,D,U}, x)
+#unit_convert(::Type{T}, u::Unitful.FreeUnits, x::Quantity{S,D,U}) where {T,S,D,U} =
+#    convert(Quantity{T,D,typeof(u)}, x)
 
 compact(x) = sprint(print, x; context=:compact=>true)
 

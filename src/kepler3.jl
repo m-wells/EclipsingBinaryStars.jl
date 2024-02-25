@@ -1,5 +1,13 @@
-kepler3(M₁::Mass, M₂::Mass, P::Time) = uconvert(u"Rsun", cbrt(P^2*u"G"*(M₁ + M₂)/(4π^2)))
-kepler3(M₁::Mass, M₂::Mass, a::Length) = uconvert(u"d", 2π*sqrt(a^3/(u"G"*(M₁ + M₂))))
-kepler3(s1::Star, s2::Star, x) = kepler3(get_m(s1), get_m(s2), x)
-kepler3(s1::Star, s2, x) = kepler3(get_m(s1), s2, x)
-kepler3(s1, s2::Star, x) = kepler3(s1, get_m(s2), x)
+# p² G(M₁+M₂) = 4π² a³
+
+function kepler3(x, y, p::Time)
+    m = get_m(x) + get_m(y)
+    p² = p^2
+    cbrt(p² * u"G" * m / (4π^2))
+end
+
+function kepler3(x, y, a::Length)
+    m = get_m(x) + get_m(y)
+    a³ = a^3
+    2π * sqrt(a³ / (m * u"G"))
+end

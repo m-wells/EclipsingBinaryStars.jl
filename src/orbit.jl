@@ -1,62 +1,108 @@
+#function _sma(a)
+#    0 < a < Inf || error("semi-majoir axis must be positive and finite\n\ta = ", a)
+#    return a
+#end
+
+#function _check_period(p)
+#    0 < p < Inf || error("period must be a positive and finite\n\tp = ", p)
+#end
+
+#function _check_eccn(e)
+#    (0 ≤ e < 1) || error("eccentricity needs to be in the range [0, 1)\n\te = ", e)
+#end
+
+#function _check_incl(i)
+#    (0 ≤ i < π) || error("inclination needs to be in the range [0, π)\n\ti = ", i)
+#end
+
+#function _check_aofp(w)
+#    (0 ≤ w < 2π) || error(
+#        "argument of periastron needs to be in the range [0, 2π)\n\tw = ",
+#        w,
+#    )
+#end
+
+#function _check_lan(l)
+#    (0 ≤ l < 2π) || error(
+#        "longitude of the ascending node needs to be in the range [0, 2π)\n\t l = ",
+#        l,
+#    )
+#end
+
+@doc raw"""
+    Orbit(a::Real, p::Real, e::Real, i::Real, w::Real, l::Real)
+
+Construct an `Orbit`.
+* `a`: semi-major axis in Rsun, (0, Inf)
+* `p`: period in days,  (0, Inf)
+* `e`: eccentricity,  [0, 1)
+* `i`: inclination in radians, [0, π]
+* `w`: argument of periastron in radians, [0, 2π)
+* `l`: longitude of the ascending node in radians, [0, 2π)
+"""
 struct Orbit{T}
-    a::AU{T}
-    P::Days{T}
+    a::Rsun{T}
+    p::Day{T}
     e::T
-    i::Degree{T}
-    ω::Degree{T}
-    Ω::Degree{T}
-
-    function Orbit(
-        a::AU{T},
-        P::Days{T},
-        e::T,
-        i::Degree{T},
-        ω::Degree{T},
-        Ω::Degree{T}
-    ) where T<:Real
-        a > 0u"AU" || error("semi-major axis must be positive\n\ta = ", a)
-        isinf(a) && error("infinite value for semi-major axis\n\ta = ", a)
-        P > 0u"d" || error("period must be positive\n\tP = ", P)
-        isinf(P) && error("infinite value for period\n\tP = ", P)
-        (0 ≤ e ≤ 1) || error("eccentricity needs to be between 0 and 1\n\te = ", e)
-        (0u"°" ≤ i ≤ 180u"°") || error("inclination needs to be between 0° and 180°\n\ti = ", i)
-        (0u"°" ≤ ω ≤ 360u"°") || error(
-            "argument of periastron needs to be between 0° and 360°\n\t ω = ",
-            ω
-        )
-        (0u"°" ≤ Ω ≤ 360u"°") || error(
-            "longitude of the ascending node needs to be between 0° and 360\n\t Ω = ",
-            Ω
-        )
-        return new{T}(a, P, e, i, ω, Ω)
-    end
+    i::Rad{T}
+    w::Rad{T}
+    l::Rad{T}
 end
 
-function Orbit(a::Length, P::Time, e::Real, i::Angle, ω::Angle, Ω::Angle)
-    T = promote_numtype(a, P, e, i, ω, Ω)
-    return Orbit(
-        unit_convert(T, u"AU", a),
-        unit_convert(T, u"d", P),
-        convert(T, e),
-        unit_convert(T, u"°", i),
-        unit_convert(T, u"°", ω),
-        unit_convert(T, u"°", Ω)
-    )
+function Orbit(a, p, e, i, w, l)
+    _a, _p, _e, _i, _w, _l = promote(__rsun(a), __day(p), e, __rad(i), __rad(w), __rad(l))
+    Orbit(_rsun(_a), _day(_p), _e, _rad(_i), _rad(_w), _rad(_l))
 end
 
-Orbit(a::Length, P::Time; e = 0, i = 0u"°", ω = 0u"°", Ω = 0u"°") = Orbit(a, P, e, i, ω, Ω)
+Orbit{T}(o::Orbit) where {T} = Orbit(T(o.a), T(o.p), T(o.e), T(o.i), T(o.w), T(o.l))
 
-# this method is defined mainly to make the next method work for a or P
-Orbit(P::Time, a::Length; kwargs...) = Orbit(a, P; kwargs...)
-# given stars or masses figure out the resulting a (or P) given P (or a)
-Orbit(s1, s2, x; kwargs...) = Orbit(x, kepler3(s1, s2, x); kwargs...)
+get_a(o::Orbit) = getfield(o, :a)
+get_p(o::Orbit) = getfield(o, :p)
+get_e(o::Orbit) = getfield(o, :e)
+get_i(o::Orbit) = getfield(o, :i)
+get_w(o::Orbit) = getfield(o, :w)
+get_l(o::Orbit) = getfield(o, :l)
 
-get_a(o::Orbit) = o.a
-get_P(o::Orbit) = o.P
-get_e(o::Orbit) = o.e
-get_i(o::Orbit) = o.i
-get_ω(o::Orbit) = o.ω
-get_Ω(o::Orbit) = o.Ω
+Orbit(a::Length, p::Time; e=0, i=π / 2, w=0, l=0) = Orbit(a, p, e, i, w, l)
 
-Base.show(io::IO, o::Orbit) = printfields(io, o)
-Base.show(io::IO, ::MIME"text/plain", o::Orbit) = print(io, typeof(o), o)
+"""
+    Orbit(star_or_mass1, star_or_mass2, a::Length; kws...)
+
+Create an `Orbit` with semi-major axis `a`.
+The period is computed via `kepler3`.
+The other orbital components can be passed via `kws...`.
+"""
+Orbit(x, y, a::Length; kws...) = Orbit(a, kepler3(x, y, a); kws...)
+
+"""
+    Orbit(star_or_mass1, star_or_mass2, p::Time; kws...)
+
+Create an `Orbit` with period `p`.
+The semi-major axis is computed via `kepler3`.
+The other orbital components can be passed via `kws...`.
+"""
+Orbit(x, y, p::Time; kws...) = Orbit(kepler3(x, y, p), p; kws...)
+
+Base.convert(::Type{T}, o::Orbit) where {T<:Orbit} = T(o)
+
+Base.show(io::IO, o::Orbit) = print(
+    IOContext(io, :compact => haskey(io, :compact) ? io[:compact] : true),
+    nameof(typeof(o)), '(',
+    o.a, ", ", o.p,
+    "; e = ", o.e,
+    ", i = ", o.i,
+    ", w = ", o.w,
+    ", l = ", o.l,
+    ')',
+)
+
+Base.show(io::IO, ::MIME"text/plain", o::Orbit) = print(
+    IOContext(io, :compact => haskey(io, :compact) ? io[:compact] : true),
+    typeof(o), ':',
+    "\n  a = ", o.a,
+    "\n  p = ", o.p,
+    "\n  e = ", o.e,
+    "\n  i = ", o.i,
+    "\n  w = ", o.w,
+    "\n  l = ", o.l,
+)
